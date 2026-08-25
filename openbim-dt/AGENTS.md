@@ -1,14 +1,20 @@
-# openbim-dt instructions
+# openbim-dt crate instructions
 
-Purpose: ISO 23387 data templates: property definitions, groups, quantity kinds, units.
+`openbim-dt` is the canonical ISO 23387 data-template crate.
 
-Follow `../AGENTS.md`. Read `PLAN.md` only for assigned implementation or
-roadmap work; keep progress, blockers, and evidence there.
+Current implementation: ISO 23387 edition 2 namespace identity and a named draft
+placeholder namespace only. No model, parser, writer, validator, governance
+workflow, or mapping is implemented.
 
-## Boundary
+## Rules
 
-openbim-core only. Imported BY openbim-loin, never the reverse.
+- Keep the crate independent of the OpenBIM.rs parent workspace.
+- Keep `#![forbid(unsafe_code)]`.
+- Preserve dependency direction: this crate may use `openbim-core`; it must not
+  depend on LOIN or higher-level consumers.
+- Public capability claims require tests and redistributable evidence.
+- Do not copy standards prose, XSDs, PDFs, or annex examples into crate sources.
+- Keep `AGENTS.md` and `PLAN.md` excluded from crates.io archives.
 
-## Status
-
-Reserved.
+Run `../scripts/gate.sh` from this directory or `./scripts/gate.sh` from the
+repository root before committing.

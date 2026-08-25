@@ -1,27 +1,25 @@
 # openbim-dt
 
-ISO 23387 data templates for Rust.
+Pure-Rust namespace contracts for ISO 23387 data templates.
 
-The concept vocabulary that describes *properties themselves*: property definitions, groups of properties, quantity kinds, dimensions, units and object types, plus the reference machinery binding them to external dictionaries such as bSDD.
-
-It is a separate crate because LOIN does not own it — the ISO 7817-3 schema *imports* this namespace, and a bSDD client needs the same vocabulary without depending on LOIN.
+`openbim-dt` is the lower-level vocabulary that LOIN and independent
+data-template tooling may consume. It is not owned by LOIN and does not depend
+on it.
 
 ## Status
 
-**Reserved.** This release establishes the crate name and its place in the
-layering. It does not parse files yet — see the crate documentation for what is
-implemented versus reserved.
+Version 0.1.1 is a **reserved namespace scaffold**. It exposes the ISO 23387
+edition 2 namespace and the known draft placeholder namespace. It does not yet
+provide a data model, XML parser/writer, semantic validator, ISO 23386 workflow,
+or ISO 12006-3 mapping.
 
-No ISO/CEN schema is vendored in this crate. Types are written *from* the
-schemas; the schema files themselves are referenced out of tree, because
-possessing a copy of a standard does not establish the right to redistribute it.
+See the [repository README](https://github.com/openbimrs/dt#readme),
+[architecture](https://openbimrs.github.io/dt/architecture/), and
+[API documentation](https://docs.rs/openbim-dt) for the maintained capability
+boundary.
 
-## Part of nehirde
-
-A pure-Rust IFC and openBIM toolchain: <https://github.com/GeneralPawz/nehirde>
-
-Design rationale for the crate layout: `docs/adr/0015`.
+No ISO/DIN/CEN document, XSD, or annex example is distributed in this package.
 
 ## License
 
-MIT
+MIT — see [LICENSE](https://github.com/openbimrs/dt/blob/main/LICENSE).

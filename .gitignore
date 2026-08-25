@@ -1,0 +1,5 @@
+/target/
+/references/
+/.hermes/
+**/__pycache__/
+*.pyc

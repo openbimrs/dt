@@ -1,15 +1,18 @@
 [package]
 name = "openbim-dt"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-license.workspace = true
-authors.workspace = true
-repository = "https://github.com/openbimrs/openbim"
+version = "0.1.1"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+authors = ["point-grey"]
+repository = "https://github.com/openbimrs/dt"
+homepage = "https://openbimrs.github.io/dt/"
+documentation = "https://docs.rs/openbim-dt"
 readme = "README.md"
-description = "ISO 23387 data templates: the concept vocabulary LOIN and bSDD build on."
-keywords = ["bim", "openbim", "ifc", "aec"]
-categories = ["parser-implementations", "data-structures"]
+description = "ISO 23387 data-template namespace contracts for Rust."
+keywords = ["bim", "openbim", "ifc", "data-template"]
+categories = ["data-structures"]
+exclude = ["AGENTS.md", "PLAN.md"]
 
 [dependencies]
-openbim-core.workspace = true
+openbim-core = "0.1.0"

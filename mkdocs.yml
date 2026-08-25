@@ -1,0 +1,67 @@
+site_name: OpenBIM.rs Data Templates
+site_description: Pure-Rust ISO 23387 data-template contracts
+site_url: https://openbimrs.github.io/dt/
+repo_url: https://github.com/openbimrs/dt
+repo_name: openbimrs/dt
+edit_uri: edit/main/
+docs_dir: target/docs-source
+site_dir: target/site
+strict: true
+use_directory_urls: true
+
+nav:
+  - Overview: index.md
+  - Architecture: architecture.md
+  - Roadmap: roadmap.md
+  - Changelog: changelog.md
+  - Rust API: https://openbimrs.github.io/dt/api/openbim_dt/
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - toc.follow
+    - content.code.copy
+    - search.highlight
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: cyan
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+copyright: OpenBIM.rs contributors · MIT-licensed source code
