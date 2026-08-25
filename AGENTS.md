@@ -1,9 +1,10 @@
 # Data-template repository instructions
 
 This repository owns the OpenBIM.rs ISO 23387 data-template family. The
-published crate is currently a namespace scaffold; do not describe parsing,
-writing, complete modeling, validation, ISO 23386 governance, or ISO 12006-3
-mapping as implemented without executable conformance evidence.
+crate source provides value contracts, a bounded lossless-semantic XML codec,
+typed views/wrappers, built-in diagnostics, and CLI. Do not describe XSD or
+clause-level conformance, byte-identical output, ISO 23386 governance, or ISO
+12006-3 mapping as implemented without executable conformance evidence.
 
 ## Map
 

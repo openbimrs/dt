@@ -1,86 +1,88 @@
 # Roadmap
 
-`openbim-dt` is an honest ISO 23387 namespace scaffold. This roadmap separates
-the two implemented namespace constants from future modeling, codecs,
-validation, governance, and integrations.
+`openbim-dt` now provides an ISO 23387 edition 2 contract layer, lossless semantic
+XML codec, typed views, built-in diagnostics, and CLI. This roadmap distinguishes
+that executable scope from schema-complete conformance and governance work.
 
 ## Current baseline
 
-Implemented and released:
+Implemented in the `0.2` source line:
 
-- ISO 23387 edition 2 namespace identity;
-- the known pre-release placeholder namespace for future targeted diagnostics;
-- standalone Rust gates, package leakage checks, API documentation, and
-  OpenBIM facade integration.
+- edition 2 and draft-placeholder namespace identities;
+- reusable GUID, multilingual text, reference, rational, data-type, unit/base,
+  and concept contracts;
+- bounded XML parsing and semantic writing with unknown-content retention;
+- global DT family views and owned typed wrappers;
+- structured built-in validation diagnostics;
+- CLI inspection, validation, and rewrite operations;
+- synthetic fixture provenance, mutation probes, packaging leakage checks, API
+  documentation, and OpenBIM facade integration.
 
 Not implemented:
 
-- a complete ISO 23387 domain model;
-- XML parsing, writing, schema validation, or lossless round trips;
-- semantic validation and structured diagnostics;
+- full XSD validation or clause-by-clause ISO 23387 conformance;
+- complete format-neutral owned representations for every optional ConceptType
+  field;
+- byte-identical XML output;
 - ISO 23386 governance workflows;
 - ISO 12006-3 mapping;
-- LOIN, bSDD, or other consumer integration.
+- a bSDD adapter.
 
 ## Delivery principles
 
-1. **Domain and wire layers stay separate.** XML names and ordering must not
-   become the only representation of ISO 23387 concepts.
-2. **Lossless before convenient.** Unknown attributes, elements, ordering, and
-   namespace evidence must survive before a codec claims lossless round trips.
+1. **Domain and wire layers stay separate.** XML ordering is retained by the wire
+   tree while reusable standard contracts remain application-facing values.
+2. **Retain before interpreting.** Unknown attributes, elements, order, and
+   namespace evidence survive even when no typed accessor exists.
 3. **Parsing is not validation.** Structural decoding and semantic diagnostics
    are separate APIs and capability claims.
-4. **Explicit editions and drafts.** Readers retain source namespace/version
-   evidence; writers require an explicit supported target.
-5. **Evidence-backed coverage.** Claims require redistributable or original
+4. **Explicit editions and drafts.** Namespace evidence is retained and draft
+   inputs are never silently normalized into edition 2.
+5. **Evidence-backed coverage.** Claims require original or redistributable
    fixtures, positive/negative tests, and mutation probes.
-6. **Dependency direction stays downward.** Consumers may depend on data
-   templates; data templates never depend on LOIN.
+6. **Dependency direction stays downward.** Consumers may depend on DT; DT never
+   depends on LOIN.
 
 ## Milestones
 
-### 1. Format-neutral domain contracts
+### 1. Contract and codec baseline — implemented
 
-- Model concepts, properties, groups, templates, object types, dimensions,
-  units, quantity kinds, multilingual text, and reference identities.
-- Represent required/optional boundaries and stable identifiers explicitly.
-- Preserve extension points and provenance for concepts not yet modeled.
+- Standard lexical values and reusable concept core.
+- Namespace-aware bounded parser and semantic writer.
+- Typed views/wrappers for all global edition 2 element families.
+- Unknown-content, comments, PI, CDATA, and order retention.
 
-**Exit evidence:** typed contract tests cover cardinality and identity rules
-without importing XML-specific policy into domain types.
+### 2. Built-in diagnostics — implemented subset
 
-### 2. Lossless ISO 23387 XML representation
+Current diagnostics cover namespace/root identity, required/duplicate/invalid
+GUIDs, ConceptType creation date/name requirements, reference identity,
+multilingual language tags, and data-type names.
 
-- Implement namespace-aware reading with explicit edition evidence.
-- Retain unknown elements, attributes, ordering, and lexical data where required.
-- Require an explicit supported namespace when writing.
+Future work should add only diagnostics justified by public evidence and should
+keep warning/error policy stable once released.
 
-**Exit evidence:** public or original fixtures round-trip byte-equivalently where
-claimed, plus mutation tests for unknown-data retention and namespace handling.
+### 3. Schema-complete model and validation — future
 
-### 3. Structured validation
+- Measure XSD declaration/field coverage with a machine-readable inventory.
+- Complete owned contracts for optional lifecycle and provenance fields.
+- Evaluate an XSD validator without vendoring restricted schema material.
+- Publish exact edition and clause coverage; never equate parsing with
+  conformance.
 
-- Separate XSD structural checks from ISO 23387 semantic diagnostics.
-- Return stable paths, identifiers, severities, and source evidence.
-- Never silently normalize invalid draft namespaces into edition 2.
-
-**Exit evidence:** every diagnostic has positive, negative, and mutation-tested
-coverage.
-
-### 4. ISO 23386 and ISO 12006-3 boundaries
+### 4. ISO 23386 and ISO 12006-3 boundaries — future
 
 - Model governance and dictionary mapping as explicit companion contracts.
-- Keep lifecycle policy and mapping provenance out of the core wire codec.
-- Document which clauses and editions each capability covers.
+- Keep lifecycle policy and mapping provenance out of the wire codec.
 
-### 5. Consumers
+### 5. Consumers — active
 
-- Add LOIN integration only when LOIN uses released DT types.
-- Evaluate dictionary/bSDD adapters independently from the ISO 23387 codec.
+- Use released DT contracts in LOIN only at ISO 7817-3 fields whose XSD types are
+  imported from ISO 23387.
+- Evaluate dictionary/bSDD adapters independently.
 - Maintain acyclic dependencies and registry-versioned release order.
 
 ## Standards material boundary
 
 Purchased or otherwise restricted standards files remain local under
-`references/`. The documentation and release pipelines must never copy that
-directory into Git, crates, fixtures, build artifacts, or GitHub Pages.
+`references/`. Documentation and release pipelines never copy that directory
+into Git, crates, fixtures, build artifacts, or GitHub Pages.

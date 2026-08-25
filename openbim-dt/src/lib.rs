@@ -14,13 +14,17 @@
 //! also need the vocabulary without acquiring a LOIN dependency.
 //!
 //! The dependency direction is therefore `openbim-loin` to `openbim-dt`, never
-//! the reverse. The current LOIN scaffold does not yet consume these contracts.
+//! the reverse.
 //!
 //! # Status
 //!
-//! **Reserved namespace scaffold.** This crate does not yet implement the ISO
-//! 23387 data model, XML parsing/writing, semantic validation, ISO 23386
-//! governance workflows, or ISO 12006-3 mapping.
+//! The crate implements validated lexical contracts, a bounded namespace-aware
+//! parser, semantic XML round trips with unknown-content retention, owned type
+//! contracts and typed global/local DT element views, diagnostics, and a CLI.
+//!
+//! It does not claim XML Schema or clause-level ISO conformance, byte-identical
+//! output, ISO 23386 governance workflows, or ISO 12006-3 mapping. Parsing and
+//! validation are deliberately separate operations.
 //!
 //! The ISO XSD is **not vendored** here. Redistribution rights do not follow
 //! from possessing a standards document or annex, so restricted references
@@ -28,10 +32,34 @@
 
 #![forbid(unsafe_code)]
 
+mod document;
+mod domain;
+mod model;
+mod parser;
+mod value;
+
+pub use document::{Attribute, Document, Element, Node, WriteError, XmlDeclaration};
+pub use domain::{
+    DataTemplate, DataType, DataTypeConstraint, DataValue, Dimension, GroupOfProperties,
+    ObjectType, Property, QuantityKind, ReferenceDocument, Subject, Unit, ValueList,
+};
+pub use model::{
+    ConceptRef, DataTemplateElement, DataTemplateRef, DataTypeRef, Diagnostic, DiagnosticCode,
+    DimensionElement, ElementKind, GroupOfPropertiesElement, Library, LibraryElement, LibraryItem,
+    ModelError, MultilingualTextRef, ObjectTypeElement, PropertyElement, PropertyRef,
+    QuantityKindElement, ReferenceDocumentElement, ReferenceRef, Severity, SubjectElement,
+    UnitElement,
+};
+pub use parser::{ParseError, ParseErrorKind, ParseOptions};
+pub use value::{
+    AnyUri, Base, Concept, DataTypeName, DateTime, Decimal, Guid, Language, MultiLanguageText,
+    PositiveInteger, Rational, Reference, Scale, ValueError, ValueErrorKind,
+};
+
 /// The XML namespace declared by ISO 23387 edition 2.
 ///
-/// Namespace identity is the only released wire-level contract. It does not
-/// imply that this crate can parse or validate ISO 23387 documents.
+/// Readers retain this identity rather than treating draft namespaces as the
+/// edition 2 standard.
 pub const NAMESPACE: &str = "https://standards.iso.org/iso/23387/ed-2/en/";
 
 /// A placeholder namespace found in pre-release ISO 23387 schema drafts.

@@ -1,6 +1,6 @@
 [package]
 name = "openbim-dt"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
@@ -9,10 +9,16 @@ repository = "https://github.com/openbimrs/dt"
 homepage = "https://openbimrs.github.io/dt/"
 documentation = "https://docs.rs/openbim-dt"
 readme = "README.md"
-description = "ISO 23387 data-template namespace contracts for Rust."
+description = "Lossless ISO 23387 data-template model and XML codec for Rust."
 keywords = ["bim", "openbim", "ifc", "data-template"]
 categories = ["data-structures"]
 exclude = ["AGENTS.md", "PLAN.md"]
 
+[[bin]]
+name = "openbim-dt"
+path = "src/main.rs"
+
 [dependencies]
-openbim-core = "0.1.0"
+getrandom = "0.2.16"
+quick-xml = { version = "0.41.0", default-features = false }
+roxmltree = { version = "0.21.1", default-features = false, features = ["std", "positions"] }

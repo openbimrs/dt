@@ -3,75 +3,143 @@
 ## Repository role
 
 `openbimrs/dt` is the canonical source repository for ISO 23387 data-template
-contracts. `packages/dt` is its superproject integration location: an
-`openbimrs/openbim` integration commit records one verified child revision and
-provides ecosystem-level tests plus the feature-gated `openbim` facade.
+contracts. `openbimrs/openbim` integrates a verified revision as the
+`packages/dt` submodule and exposes it through a feature-gated facade.
 
-The child repository remains buildable without cloning the integration
-workspace. Published crates therefore use explicit metadata and versioned
+The child repository builds independently. Published crates therefore use
 registry dependencies rather than paths into sibling repositories.
 
 ## Dependency direction
 
 ```text
-openbim-core  <-  openbim-dt  <-  openbim-loin / dictionary clients
-                         ^
-openbim facade  ----------+
+roxmltree + quick-xml  <-  openbim-dt  <-  openbim-loin / dictionary clients
+                                           ^
+openbim facade  ---------------+
 ```
 
-- Data-template contracts may use released shared core contracts.
-- LOIN and dictionary clients may consume released data-template contracts.
-- Data templates must never depend on LOIN.
-- The facade may optionally re-export data-template and consumer crates.
+- DT owns ISO 23387 contracts and format policy.
+- LOIN and dictionary clients consume released DT contracts.
+- DT never depends on LOIN or another higher-level document format.
+- XML plumbing is format-specific code: `roxmltree` enforces strict XML 1.0
+  well-formedness and namespaces before `quick-xml` builds the retention tree.
+  There is no project-wide codec abstraction.
 
-This keeps a reusable vocabulary below the document formats that import it.
+## Implemented layers
 
-## Responsibility layers
+### Lexical contracts
 
-Future implementation has separate responsibilities:
+`Guid`, `DateTime`, `Language`, `Decimal`, `AnyUri`, `MultiLanguageText`,
+`Reference`, `Rational`, `DataTypeName`, `Scale`, `Base`, and the reusable owned
+`Concept` core represent contracts imported by other standards. XML Schema
+whitespace collapsing is applied by the value types that require it.
+`AnyUri` follows the broad XML Schema 1.0 lexical space, retaining Unicode and
+spaces that the schema-defined escaping procedure maps to a URI.
+Forward-compatible enums retain unknown values instead of normalizing or
+rejecting future vocabulary.
 
-1. **Domain contracts** — concepts, templates, properties, groups, identifiers,
-   multilingual text, units, dimensions, quantity kinds, and references.
-2. **Wire representation** — namespace-aware XML syntax, ordering, lexical
-   evidence, and unknown-content retention.
-3. **Validation** — structural and semantic diagnostics with stable paths and
-   source/version evidence.
-4. **Governance and mappings** — explicit ISO 23386 lifecycle and ISO 12006-3
-   mapping contracts rather than implicit codec policy.
-5. **Consumers** — LOIN, dictionary clients, and application adapters depending
-   only on released lower-level APIs.
+### Lossless semantic XML tree
 
-Parsing does not imply validation. A typed model does not imply complete schema
-coverage. Reading known fields does not imply lossless writing.
+`Document`, `Element`, `Attribute`, and `Node` retain:
 
-## Current scaffold contracts
+- resolved namespace identity and original qualified names;
+- attribute and child ordering;
+- comments, processing instructions, CDATA, and text;
+- unknown elements and attributes;
+- XML declaration evidence and prolog/epilog nodes.
 
-The `0.1.1` release commits only:
+"Lossless" means that represented XML semantics survive parse/write/parse.
+Output is not promised to be byte-identical: entity spelling, quote style, and
+other equivalent syntax may be normalized.
 
-- the ISO 23387 edition 2 XML namespace;
-- a named draft placeholder namespace for future targeted diagnostics.
+The parser enforces configurable byte, depth, node, and attribute budgets.
+Inherited namespace bindings use delta scopes and shared URI storage, so a
+large ancestor URI is not copied once per nesting level or resolved node.
+Malformed XML, duplicate expanded attributes, illegal namespace bindings, DTDs,
+invalid characters, and undeclared entities are rejected; the codec never
+resolves external entities. XML 1.1 is rejected explicitly rather than being
+accepted with incomplete lexical checks.
 
-These constants do not imply a model, parser, writer, validator, governance
-workflow, mapping implementation, or consumer integration.
+### Typed DT views
+
+Borrowed views expose standard concepts without copying or discarding the
+underlying tree. The five concrete global roots are `Library`, `DataTemplate`,
+`ObjectType`, `GroupOfProperties`, and `Property`. `LibraryItem` additionally
+recognizes every local edition 2 library-child family:
+Subject, DataTemplate, ObjectType, GroupOfProperties, Property, Unit, Dimension,
+QuantityKind, and ReferenceDocument. Unknown top-level content remains available
+as an extension element.
+
+Owned typed-element wrappers prove the family of embedded DT elements at
+tree-integration boundaries. Standards such as LOIN that declare local elements
+using DT-owned XSD types consume the owned DT value/domain contracts instead;
+they do not pretend those local elements are global DT XML elements.
+
+### Owned complex-type contracts
+
+`Subject`, `ObjectType`, `Property`, `GroupOfProperties`, `QuantityKind`,
+`ReferenceDocument`, `Dimension`, `Unit`, `DataTemplate`, and `ValueList` provide
+nominal, owned ISO 23387 type identity at cross-standard in-memory boundaries.
+`ValueList` requires a validated XML Schema `language` and at least one
+`DataValue`; further values repeat, and each optional order is bounded by the
+XML Schema `int` range. These contracts use the lexical types above and remain
+separate from namespace-specific XML element wrappers.
+`DataType` represents the four Annex E inclusive/exclusive boundary variants,
+repeating arbitrary regular-expression `DataFormat` strings, and possible value
+lists.
+
+The owned `Concept` constructor requires a validated creation date, a first
+name, and one definition so dependent standards cannot construct the incomplete
+semantic core identified by the Annex E declarations. The Annex E XSD places
+these declarations inside a repeating `choice`, which weakens their effective
+occurrence constraints. The syntax tree therefore retains such XSD-shaped
+documents; built-in diagnostics expose the semantic mismatch without pretending
+to be an XSD engine.
+
+### Validation
+
+Parsing and validation are separate operations. `Document::validate` reports
+structured severity, category, path, and message values for built-in identity,
+reference, multilingual-text, data-type, and concept checks.
+
+This validator does **not** load the restricted XSD and does not claim complete
+XML Schema or clause-level ISO conformance.
+
+### CLI
+
+The small CLI layer provides:
+
+- `inspect` for root/item/diagnostic summaries;
+- `validate` with exit code `2` for semantic findings;
+- `rewrite` with OS-random exclusive same-directory temporary output and atomic
+  rename.
 
 ## Standards and fixture boundary
 
-No ISO/DIN/CEN document, XSD, or annex example is vendored. Local references stay
-under ignored `references/`. A fixture enters `tests/fixtures/` only when it is
-original synthetic material or has explicit redistribution terms compatible
-with the repository and crate.
+No ISO/DIN/CEN document, XSD, or annex example is vendored. Local references
+stay under ignored `references/`. Public test fixtures must be original or have
+explicit compatible redistribution terms; fixture provenance is committed beside
+the fixture.
 
-The locally available ISO 23387 Annex F example remains a restricted reference;
-it is not a public test fixture.
+A locally available Annex F example is exercised during private verification but
+is never copied into Git, crates.io, rustdoc, or GitHub Pages.
+
+## Verification
+
+The release gate covers formatting, all-target builds, tests, Clippy, rustdoc,
+metadata, package contents, and restricted-file leakage. Mutation probes prove
+that tests reject removal of strict XML preflight, concrete-root classification,
+context-sensitive reference/multilingual mappings, XML Schema whitespace,
+date-time edge cases, broad `anyURI` values, shared namespace storage, required
+concept state, unknown nested writer output, and safe temporary-file creation.
 
 ## Cross-repository delivery
 
 Changes spanning repositories follow dependency order:
 
-1. land and publish `openbim-dt` changes;
-2. update consumer crates against the released DT contract;
-3. push and publish those consumers;
-4. update and verify the OpenBIM.rs submodule pins;
-5. publish the integration commit when a facade release is intended.
+1. land and publish `openbim-dt`;
+2. update and verify `openbim-loin` against that released version;
+3. publish the consumer;
+4. update exact superproject submodule pins and facade dependencies;
+5. verify recursive public clones before migrating a shared checkout.
 
-Each superproject pin is a compatibility declaration and rollback point.
+Each pin remains a compatibility declaration and rollback point.

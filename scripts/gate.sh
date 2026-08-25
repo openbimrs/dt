@@ -12,6 +12,7 @@ fi
 cargo fmt --all -- --check
 python3 -m py_compile scripts/check-docs-site.py
 bash -n scripts/build-docs.sh
+bash -n scripts/test-capability-guard.sh
 python3 - <<'PY'
 from pathlib import Path
 
@@ -25,6 +26,7 @@ assert "include-hidden-files: true" in upload_block, (
 PY
 cargo build --workspace --all-targets --locked
 cargo test --workspace --all-features --locked
+./scripts/test-capability-guard.sh
 cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps --locked
 
@@ -34,19 +36,28 @@ packages = json.load(sys.stdin)["packages"]
 assert len(packages) == 1, packages
 p = packages[0]
 assert p["name"] == "openbim-dt", p["name"]
-assert p["version"] == "0.1.1", p["version"]
+assert p["version"] == "0.2.0", p["version"]
 assert p["rust_version"] == "1.85", p["rust_version"]
 assert p["repository"] == "https://github.com/openbimrs/dt", p["repository"]
 assert p["homepage"] == "https://openbimrs.github.io/dt/", p["homepage"]
 assert p["documentation"] == "https://docs.rs/openbim-dt", p["documentation"]
 deps = p["dependencies"]
-assert len(deps) == 1 and deps[0]["name"] == "openbim-core", deps
-assert deps[0]["req"] == "^0.1.0", deps[0]["req"]
-assert deps[0].get("path") is None, deps[0].get("path")
+deps = {dep["name"]: dep for dep in deps}
+assert set(deps) == {"getrandom", "quick-xml", "roxmltree"}, deps
+assert deps["getrandom"]["req"] == "^0.2.16", deps["getrandom"]["req"]
+assert deps["quick-xml"]["req"] == "^0.41.0", deps["quick-xml"]["req"]
+assert not deps["quick-xml"]["uses_default_features"], deps["quick-xml"]
+assert deps["roxmltree"]["req"] == "^0.21.1", deps["roxmltree"]["req"]
+assert set(deps["roxmltree"]["features"]) == {"std", "positions"}, deps["roxmltree"]
+assert all(dep.get("path") is None for dep in deps.values()), deps
+targets = {(target["name"], tuple(target["kind"])) for target in p["targets"]}
+assert ("openbim_dt", ("lib",)) in targets, targets
+assert ("openbim-dt", ("bin",)) in targets, targets
 '
 
 package_files=$(cargo package -p openbim-dt --locked --allow-dirty --list)
-for required in LICENSE README.md src/lib.rs; do
+for required in LICENSE README.md src/lib.rs src/main.rs src/parser.rs src/document.rs \
+    tests/fixtures/README.md tests/fixtures/synthetic-library.xml; do
     case "$package_files" in
         *"$required"*) ;;
         *)
@@ -57,7 +68,7 @@ for required in LICENSE README.md src/lib.rs; do
 done
 while IFS= read -r package_file; do
     case "$package_file" in
-        .cargo_vcs_info.json | Cargo.lock | Cargo.toml | Cargo.toml.orig | LICENSE | README.md | src/*.rs) ;;
+        .cargo_vcs_info.json | Cargo.lock | Cargo.toml | Cargo.toml.orig | LICENSE | README.md | src/*.rs | tests/*.rs | tests/fixtures/README.md | tests/fixtures/synthetic-library.xml) ;;
         *)
             printf 'package contains an undeclared file: %s\n' "$package_file" >&2
             exit 1
@@ -67,11 +78,17 @@ done <<<"$package_files"
 while IFS= read -r package_file; do
     lower=$(printf '%s' "$package_file" | tr '[:upper:]' '[:lower:]')
     case "$lower" in
+        tests/fixtures/synthetic-library.xml) ;;
         references/* | *.pdf | *.xsd | *.xsd.xml | *.xml | *.xlsx | *.xls)
             printf 'package contains forbidden standards or fixture material: %s\n' "$package_file" >&2
             exit 1
             ;;
     esac
 done <<<"$package_files"
+
+cargo run --locked -q -p openbim-dt --bin openbim-dt -- inspect \
+    openbim-dt/tests/fixtures/synthetic-library.xml
+cargo run --locked -q -p openbim-dt --bin openbim-dt -- validate \
+    openbim-dt/tests/fixtures/synthetic-library.xml
 
 cargo package -p openbim-dt --locked --allow-dirty
