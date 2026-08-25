@@ -12,6 +12,17 @@ fi
 cargo fmt --all -- --check
 python3 -m py_compile scripts/check-docs-site.py
 bash -n scripts/build-docs.sh
+python3 - <<'PY'
+from pathlib import Path
+
+workflow = Path(".github/workflows/pages.yml").read_text(encoding="utf-8")
+upload = "uses: actions/upload-pages-artifact@"
+assert workflow.count(upload) == 1, "Pages workflow must have one upload step"
+upload_block = workflow.split(upload, 1)[1].split("\n      - ", 1)[0]
+assert "include-hidden-files: true" in upload_block, (
+    "Pages upload must include validated hidden files such as .nojekyll"
+)
+PY
 cargo build --workspace --all-targets --locked
 cargo test --workspace --all-features --locked
 cargo clippy --workspace --all-targets --all-features --locked -- -D warnings

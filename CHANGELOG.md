@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Connected the complete pre-standalone DT lineage across
+  `packages/openbim/openbim-dt`, `packages/openbim-dt`, and `packages/dt`
+  without rewriting the published `v0.1.0` or `v0.1.1` release commits.
+- Made the GitHub Pages upload include hidden files so the deployed artifact
+  matches the tree validated by the documentation gate, including `.nojekyll`.
+
 ## [0.1.1] - 2026-08-25
 
 ### Changed
