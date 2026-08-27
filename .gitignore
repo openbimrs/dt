@@ -3,3 +3,6 @@
 /.hermes/
 **/__pycache__/
 *.pyc
+
+# Local scratch worktrees for iterative review/dev — never tracked.
+/.worktrees/
