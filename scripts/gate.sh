@@ -11,6 +11,7 @@ fi
 
 cargo fmt --all -- --check
 python3 -m py_compile scripts/check-docs-site.py
+python3 -m py_compile scripts/generate-schema-tables.py
 bash -n scripts/build-docs.sh
 bash -n scripts/test-capability-guard.sh
 python3 - <<'PY'

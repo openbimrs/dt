@@ -5,7 +5,7 @@ use std::{collections::HashMap, error::Error, fmt, sync::Arc};
 use quick_xml::{escape::unescape, events::BytesStart, events::Event, Reader, XmlVersion};
 use roxmltree::{Document as StrictDocument, Error as StrictError, ParsingOptions};
 
-use crate::document::{push_coalescing_text, Attribute, Document, Element, Node, XmlDeclaration};
+use crate::document::{Attribute, Document, Element, Node, NodeList, Span, XmlDeclaration};
 
 const XML_NAMESPACE: &str = "http://www.w3.org/XML/1998/namespace";
 const XMLNS_NAMESPACE: &str = "http://www.w3.org/2000/xmlns/";
@@ -107,8 +107,9 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
     reader.config_mut().expand_empty_elements = false;
 
     let mut declaration = None;
-    let mut prolog = Vec::new();
-    let mut epilog = Vec::new();
+    let mut declaration_span = None;
+    let mut prolog = NodeList::new();
+    let mut epilog = NodeList::new();
     let mut root = None;
     let mut elements = Vec::<Element>::new();
     let mut scope = base_scope();
@@ -149,6 +150,7 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
                     }
                 };
                 declaration = Some(parsed);
+                declaration_span = Some(Span::new(position, reader.buffer_position()));
             }
             Event::Start(value) => {
                 increment_nodes(&mut node_count, options, position)?;
@@ -167,13 +169,16 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
                     ));
                 }
                 let (element, undo) = parse_element(
-                    &reader,
+                    &ElementContext {
+                        reader: &reader,
+                        options,
+                        position,
+                        xml_version,
+                        span: Some(Span::new(position, reader.buffer_position())),
+                    },
                     &value,
                     false,
                     &mut scope,
-                    options,
-                    position,
-                    xml_version,
                 )?;
                 elements.push(element);
                 scope_undos.push(undo);
@@ -195,19 +200,22 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
                     ));
                 }
                 let (element, undo) = parse_element(
-                    &reader,
+                    &ElementContext {
+                        reader: &reader,
+                        options,
+                        position,
+                        xml_version,
+                        span: Some(Span::new(position, reader.buffer_position())),
+                    },
                     &value,
                     true,
                     &mut scope,
-                    options,
-                    position,
-                    xml_version,
                 )?;
                 append_element(element, &mut elements, &mut root)?;
                 restore_scope(&mut scope, undo);
             }
             Event::End(_) => {
-                let element = elements.pop().ok_or_else(|| {
+                let mut element = elements.pop().ok_or_else(|| {
                     ParseError::new(
                         ParseErrorKind::MalformedXml,
                         position,
@@ -222,6 +230,7 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
                     )
                 })?;
                 restore_scope(&mut scope, undo);
+                element.set_close_span(Some(Span::new(position, reader.buffer_position())));
                 append_element(element, &mut elements, &mut root)?;
             }
             Event::Text(value) => {
@@ -234,6 +243,7 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
                 })?;
                 append_node(
                     Node::Text(text.into_owned()),
+                    Some(Span::new(position, reader.buffer_position())),
                     &mut elements,
                     &mut prolog,
                     &mut epilog,
@@ -247,6 +257,7 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
                 })?;
                 append_node(
                     Node::CData(text.into_owned()),
+                    Some(Span::new(position, reader.buffer_position())),
                     &mut elements,
                     &mut prolog,
                     &mut epilog,
@@ -258,6 +269,7 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
                 let text = decode(&reader, value.as_ref(), position)?;
                 append_node(
                     Node::Comment(text),
+                    Some(Span::new(position, reader.buffer_position())),
                     &mut elements,
                     &mut prolog,
                     &mut epilog,
@@ -269,6 +281,7 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
                 let text = decode(&reader, value.as_ref(), position)?;
                 append_node(
                     Node::ProcessingInstruction(text),
+                    Some(Span::new(position, reader.buffer_position())),
                     &mut elements,
                     &mut prolog,
                     &mut epilog,
@@ -287,6 +300,7 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
                 })?;
                 append_node(
                     Node::Text(resolved),
+                    Some(Span::new(position, reader.buffer_position())),
                     &mut elements,
                     &mut prolog,
                     &mut epilog,
@@ -318,7 +332,14 @@ pub(crate) fn parse_document(xml: &str, options: ParseOptions) -> Result<Documen
             "document has no root element",
         )
     })?;
-    Ok(Document::parsed(declaration, prolog, root, epilog))
+    Ok(Document::parsed(
+        declaration,
+        prolog,
+        root,
+        epilog,
+        Some(Arc::<str>::from(xml)),
+        declaration_span,
+    ))
 }
 
 fn strict_well_formedness_check(xml: &str, options: ParseOptions) -> Result<(), ParseError> {
@@ -405,15 +426,31 @@ fn parse_declaration(
     })
 }
 
-fn parse_element(
-    reader: &Reader<&[u8]>,
-    start: &BytesStart<'_>,
-    empty_style: bool,
-    scope: &mut NamespaceScope,
+/// The invariant inputs threaded through element parsing.
+///
+/// Grouped into one struct so adding a new piece of parse context does not
+/// keep widening `parse_element`'s signature.
+struct ElementContext<'a> {
+    reader: &'a Reader<&'a [u8]>,
     options: ParseOptions,
     position: u64,
     xml_version: XmlVersion,
+    span: Option<Span>,
+}
+
+fn parse_element(
+    context: &ElementContext<'_>,
+    start: &BytesStart<'_>,
+    empty_style: bool,
+    scope: &mut NamespaceScope,
 ) -> Result<(Element, NamespaceUndo), ParseError> {
+    let ElementContext {
+        reader,
+        options,
+        position,
+        xml_version,
+        span,
+    } = *context;
     let qname = decode(reader, start.name().as_ref(), position)?;
     let (prefix, local_name) = split_qname(&qname, position)?;
     let raw_attributes: Vec<(String, Option<String>, String, String)> = start
@@ -505,6 +542,7 @@ fn parse_element(
             namespace_uri,
             attributes,
             empty_style,
+            span,
         ),
         undo,
     ))
@@ -553,8 +591,12 @@ fn append_element(
     parents: &mut [Element],
     root: &mut Option<Element>,
 ) -> Result<(), ParseError> {
+    // The element's own extent: `<a>` through `</a>`, or just `<a/>`. Derived
+    // from the element rather than passed in so the two callers (End and Empty)
+    // cannot disagree about what a child element's span covers.
+    let span = element.full_span();
     if let Some(parent) = parents.last_mut() {
-        parent.push(Node::Element(element));
+        parent.push(Node::Element(element), span);
         return Ok(());
     }
     if root.replace(element).is_some() {
@@ -569,17 +611,18 @@ fn append_element(
 
 fn append_node(
     node: Node,
+    span: Option<Span>,
     parents: &mut [Element],
-    prolog: &mut Vec<Node>,
-    epilog: &mut Vec<Node>,
+    prolog: &mut NodeList,
+    epilog: &mut NodeList,
     root_exists: bool,
 ) {
     if let Some(parent) = parents.last_mut() {
-        parent.push(node);
+        parent.push(node, span);
     } else if root_exists {
-        push_coalescing_text(epilog, node);
+        epilog.push(node, span);
     } else {
-        push_coalescing_text(prolog, node);
+        prolog.push(node, span);
     }
 }
 

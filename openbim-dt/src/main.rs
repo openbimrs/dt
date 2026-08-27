@@ -27,12 +27,16 @@ fn run(arguments: Vec<String>) -> Result<ExitCode, Box<dyn Error>> {
     match arguments.as_slice() {
         [command, input] if command == "inspect" => inspect(Path::new(input)),
         [command, input] if command == "validate" => validate(Path::new(input)),
+        [command, input] if command == "validate-schema" => validate_schema(Path::new(input)),
         [command, input, output] if command == "rewrite" => {
             rewrite(Path::new(input), Path::new(output))
         }
+        [command, input, output] if command == "rewrite-exact" => {
+            rewrite_exact(Path::new(input), Path::new(output))
+        }
         _ => {
             eprintln!(
-                "usage:\n  openbim-dt inspect <input.xml>\n  openbim-dt validate <input.xml>\n  openbim-dt rewrite <input.xml> <output.xml>"
+                "usage:\n  openbim-dt inspect <input.xml>\n  openbim-dt validate <input.xml>\n  openbim-dt validate-schema <input.xml>\n  openbim-dt rewrite <input.xml> <output.xml>\n  openbim-dt rewrite-exact <input.xml> <output.xml>"
             );
             Ok(ExitCode::from(64))
         }
@@ -89,7 +93,37 @@ fn validate(path: &Path) -> Result<ExitCode, Box<dyn Error>> {
 
 fn rewrite(input: &Path, output: &Path) -> Result<ExitCode, Box<dyn Error>> {
     let document = load(input)?;
-    let xml = document.to_xml_string()?;
+    write_document(&document.to_xml_string()?, output)
+}
+
+/// Validates against the ISO 23387 schema grammar, reporting every violation.
+///
+/// Exits `2` when the document does not conform, matching `validate`.
+fn validate_schema(path: &Path) -> Result<ExitCode, Box<dyn Error>> {
+    let document = load(path)?;
+    let report = document.validate_schema();
+    for violation in report.violations() {
+        println!("{violation}");
+    }
+    println!("violations={}", report.violations().len());
+    Ok(if report.is_conforming() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(2)
+    })
+}
+
+/// Reproduces the input byte-for-byte, proving the exact round trip on a file.
+fn rewrite_exact(input: &Path, output: &Path) -> Result<ExitCode, Box<dyn Error>> {
+    let document = load(input)?;
+    write_document(&document.to_xml_string_exact()?, output)
+}
+
+/// The single output path for every command that writes a file.
+///
+/// Both `rewrite` and `rewrite-exact` funnel through here so the atomic,
+/// OS-random temporary-file write has exactly one implementation to audit.
+fn write_document(xml: &str, output: &Path) -> Result<ExitCode, Box<dyn Error>> {
     atomic_replace(output, xml.as_bytes())?;
     Ok(ExitCode::SUCCESS)
 }

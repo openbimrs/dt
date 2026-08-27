@@ -38,8 +38,10 @@ complete ISO conformance.
 | Typed global-root views | Implemented for Library, DataTemplate, ObjectType, GroupOfProperties, and Property |
 | Typed local Library-child views | Implemented for Unit, Dimension, QuantityKind, and ReferenceDocument; these are not accepted as document roots |
 | Structured built-in diagnostics | Implemented subset; parsing remains separate from validation |
-| XML Schema validation or full clause-level conformance | Not implemented |
-| Byte-identical XML round trips | Not claimed; equivalent syntax may be normalized |
+| XML Schema validation of the ISO 23387 element grammar | Implemented; `Document::validate_schema` checks global roots, sequence order, cardinality, choices, attribute presence, and datatype facets |
+| Full clause-level ISO conformance | Not implemented; cross-document reference resolution and prose clauses are out of scope |
+| Byte-identical XML round trips | Implemented; `Document::to_xml_string_exact` reproduces the parsed bytes exactly and fails closed without retained source |
+| Semantic XML round trips | Implemented; `Document::to_xml_string` preserves content but may normalize equivalent syntax |
 | ISO 23386 governance workflow | Not implemented |
 | ISO 12006-3 mapping | Not implemented |
 | bSDD adapter | Not implemented |
@@ -93,12 +95,16 @@ let rewritten = document.to_xml_string()?;
 ```bash
 openbim-dt inspect data-template.xml
 openbim-dt validate data-template.xml
+openbim-dt validate-schema data-template.xml
 openbim-dt rewrite input.xml output.xml
+openbim-dt rewrite-exact input.xml output.xml
 ```
 
-`validate` returns exit code `2` when semantic errors are reported. Parsing and
-I/O failures return exit code `1`. `rewrite` uses an OS-random, exclusively
-created same-directory temporary file followed by an atomic rename.
+`validate` returns exit code `2` when semantic errors are reported, and
+`validate-schema` does the same for schema violations. Parsing and I/O failures
+return exit code `1`. `rewrite` emits the semantic serialization;
+`rewrite-exact` reproduces the input bytes exactly. Both use an OS-random,
+exclusively created same-directory temporary file followed by an atomic rename.
 
 ## Standards and fixtures
 

@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added XML Schema validation of the ISO 23387 element grammar via
+  `Document::validate_schema`, reporting structured `SchemaViolation` values
+  with stable codes for unknown roots, undeclared elements and attributes,
+  sequence order, `minOccurs`/`maxOccurs`, mandatory choice branches,
+  enumeration and pattern facets, datatype lexical spaces, and character data
+  in element-only content.
+- Added byte-identical round trips via `Document::to_xml_string_exact`, which
+  reproduces the parsed bytes exactly — including attribute quoting, character
+  reference spelling, intra-tag whitespace, CDATA versus escaped text, and
+  empty-element syntax — and fails closed rather than normalizing when source
+  provenance is unavailable.
+- Added `Document::source` and `Document::without_source` to inspect and drop
+  the retained parse input.
+- Added `validate-schema` and `rewrite-exact` CLI commands.
+- Added `scripts/generate-schema-tables.py`, which regenerates the committed
+  schema tables from a derived structural catalog without vendoring the ISO
+  schema.
+
+### Changed
+
+- `Document`, `Element`, and node lists now compare by semantic content;
+  retained source spans are provenance and no longer affect equality.
+- Documented the two writers explicitly: `to_xml_string` is semantic and may
+  normalize equivalent syntax, `to_xml_string_exact` is byte-identical.
+
 ## [0.2.0] - 2026-08-25
 
 ### Added

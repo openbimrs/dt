@@ -9,6 +9,7 @@ model=openbim-dt/src/model.rs
 value=openbim-dt/src/value.rs
 domain=openbim-dt/src/domain.rs
 cli=openbim-dt/src/main.rs
+conformance=openbim-dt/src/conformance.rs
 backup=$(mktemp -d)
 cp "$parser" "$backup/parser.rs"
 cp "$writer" "$backup/document.rs"
@@ -16,6 +17,7 @@ cp "$model" "$backup/model.rs"
 cp "$value" "$backup/value.rs"
 cp "$domain" "$backup/domain.rs"
 cp "$cli" "$backup/main.rs"
+cp "$conformance" "$backup/conformance.rs"
 
 restore() {
     cp "$backup/parser.rs" "$parser"
@@ -24,6 +26,7 @@ restore() {
     cp "$backup/value.rs" "$value"
     cp "$backup/domain.rs" "$domain"
     cp "$backup/main.rs" "$cli"
+    cp "$backup/conformance.rs" "$conformance"
     rm -rf "$backup"
 }
 trap restore EXIT INT TERM
@@ -182,5 +185,51 @@ replace_exact "$cli" \
     std::fs::rename(&temporary, output)?;'
 expect_killed temporary-symlink cargo test -p openbim-dt --test cli rewrite_does_not_follow_a_precreated_temporary_symlink
 cp "$backup/main.rs" "$cli"
+
+# Byte-identical round trips: the exact writer must emit retained source bytes,
+# never fall back to the normalizing semantic writer.
+replace_exact "$writer" \
+'        push_element(&mut output, source, &self.root)?;' \
+'        output.push_str(&self.to_xml_string().map_err(|_| ExactWriteError::NoSource)?);'
+expect_killed exact-writer-uses-spans cargo test -p openbim-dt --test exact_round_trip exact_writer_reproduces_source_bytes_for_every_normalization_trap
+cp "$backup/document.rs" "$writer"
+
+# The exact writer must fail closed when provenance is missing rather than
+# silently producing approximate bytes.
+replace_exact "$writer" \
+'        let source = self.source.as_deref().ok_or(ExactWriteError::NoSource)?;' \
+'        let fallback = self.to_xml_string().unwrap_or_default();
+        let source: &str = self.source.as_deref().unwrap_or(&fallback);'
+expect_killed exact-writer-fails-closed cargo test -p openbim-dt --test exact_round_trip exact_writer_fails_closed_without_retained_source
+cp "$backup/document.rs" "$writer"
+
+# Schema validation: each rule family must be enforced, not merely present.
+replace_exact "$conformance" \
+'    validate_content(element, definition, path, report);' \
+'    let _ = validate_content;'
+expect_killed schema-content-model cargo test -p openbim-dt --test schema_conformance requires_children_whose_min_occurs_is_positive
+cp "$backup/conformance.rs" "$conformance"
+
+replace_exact "$conformance" \
+'    validate_attributes(element, definition, path, report);' \
+'    let _ = validate_attributes;'
+expect_killed schema-attribute-rules cargo test -p openbim-dt --test schema_conformance requires_declared_mandatory_attributes
+cp "$backup/conformance.rs" "$conformance"
+
+# Pattern facets must actually be evaluated; an unconditional pass would let
+# a malformed GUID through.
+replace_exact "$conformance" \
+'        if !matches_pattern(pattern, &value) {' \
+'        if false {'
+expect_killed schema-pattern-facet cargo test -p openbim-dt --test schema_conformance enforces_the_guid_pattern_facet
+cp "$backup/conformance.rs" "$conformance"
+
+# XML Schema whitespace is exactly TAB/LF/CR/SPACE. Widening it to Unicode
+# whitespace would wrongly accept NBSP-padded enumeration values.
+replace_exact "$conformance" \
+"    matches!(character, '\\u{0009}' | '\\u{000A}' | '\\u{000D}' | '\\u{0020}')" \
+'    character.is_whitespace()'
+expect_killed schema-xsd-whitespace cargo test -p openbim-dt --test schema_conformance collapses_only_the_four_xml_schema_whitespace_characters
+cp "$backup/conformance.rs" "$conformance"
 
 cargo fmt --all -- --check

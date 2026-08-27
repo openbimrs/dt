@@ -22,9 +22,13 @@
 //! parser, semantic XML round trips with unknown-content retention, owned type
 //! contracts and typed global/local DT element views, diagnostics, and a CLI.
 //!
-//! It does not claim XML Schema or clause-level ISO conformance, byte-identical
-//! output, ISO 23386 governance workflows, or ISO 12006-3 mapping. Parsing and
-//! validation are deliberately separate operations.
+//! It also implements XML Schema validation of the ISO 23387 element grammar
+//! ([`Document::validate_schema`]) and byte-identical round trips
+//! ([`Document::to_xml_string_exact`]).
+//!
+//! It does not claim full clause-level ISO conformance, ISO 23386 governance
+//! workflows, or ISO 12006-3 mapping. Parsing and validation are deliberately
+//! separate operations.
 //!
 //! The ISO XSD is **not vendored** here. Redistribution rights do not follow
 //! from possessing a standards document or annex, so restricted references
@@ -32,13 +36,19 @@
 
 #![forbid(unsafe_code)]
 
+mod conformance;
 mod document;
 mod domain;
 mod model;
 mod parser;
+mod schema;
 mod value;
 
-pub use document::{Attribute, Document, Element, Node, WriteError, XmlDeclaration};
+pub use conformance::{SchemaReport, SchemaViolation, SchemaViolationCode};
+
+pub use document::{
+    Attribute, Document, Element, ExactWriteError, Node, WriteError, XmlDeclaration,
+};
 pub use domain::{
     DataTemplate, DataType, DataTypeConstraint, DataValue, Dimension, GroupOfProperties,
     ObjectType, Property, QuantityKind, ReferenceDocument, Subject, Unit, ValueList,
