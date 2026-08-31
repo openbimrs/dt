@@ -39,6 +39,7 @@ p = packages[0]
 assert p["name"] == "openbim-dt", p["name"]
 assert p["version"] == "0.2.0", p["version"]
 assert p["rust_version"] == "1.85", p["rust_version"]
+assert p["license"] == "AGPL-3.0-or-later", p["license"]
 assert p["repository"] == "https://github.com/openbimrs/dt", p["repository"]
 assert p["homepage"] == "https://openbimrs.github.io/dt/", p["homepage"]
 assert p["documentation"] == "https://docs.rs/openbim-dt", p["documentation"]
@@ -57,7 +58,7 @@ assert ("openbim-dt", ("bin",)) in targets, targets
 '
 
 package_files=$(cargo package -p openbim-dt --locked --allow-dirty --list)
-for required in LICENSE README.md src/lib.rs src/main.rs src/parser.rs src/document.rs \
+for required in LICENSE LICENSES/MIT.txt README.md src/lib.rs src/main.rs src/parser.rs src/document.rs \
     tests/fixtures/README.md tests/fixtures/synthetic-library.xml; do
     case "$package_files" in
         *"$required"*) ;;
@@ -69,7 +70,7 @@ for required in LICENSE README.md src/lib.rs src/main.rs src/parser.rs src/docum
 done
 while IFS= read -r package_file; do
     case "$package_file" in
-        .cargo_vcs_info.json | Cargo.lock | Cargo.toml | Cargo.toml.orig | LICENSE | README.md | src/*.rs | tests/*.rs | tests/fixtures/README.md | tests/fixtures/synthetic-library.xml) ;;
+        .cargo_vcs_info.json | Cargo.lock | Cargo.toml | Cargo.toml.orig | LICENSE | LICENSES/MIT.txt | README.md | src/*.rs | tests/*.rs | tests/fixtures/README.md | tests/fixtures/synthetic-library.xml) ;;
         *)
             printf 'package contains an undeclared file: %s\n' "$package_file" >&2
             exit 1

@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Relicensed repository-authored work from MIT to `AGPL-3.0-or-later`; historical releases remain under their published MIT terms, and third-party material retains its own terms.
 - `Document`, `Element`, and node lists now compare by semantic content;
   retained source spans are provenance and no longer affect equality.
 - Documented the two writers explicitly: `to_xml_string` is semantic and may

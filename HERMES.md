@@ -19,7 +19,7 @@ changing public documentation. It assembles MkDocs and rustdoc into
 
 ## Project conventions
 
-- Rust 2021, MSRV 1.85, MIT.
+- Rust 2021, MSRV 1.85, AGPL-3.0-or-later.
 - Pure Rust; unsafe code is forbidden.
 - Dependency direction is core → data templates → LOIN/consumers.
 - Keep domain contracts, XML wire representation, validation policy, and

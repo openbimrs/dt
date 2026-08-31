@@ -44,8 +44,8 @@ See the [repository README](https://github.com/openbimrs/dt#readme),
 [API documentation](https://docs.rs/openbim-dt) for exact capability boundaries.
 
 No ISO/DIN/CEN document, XSD, or annex example is distributed in this package.
-The included XML fixture is original MIT-licensed synthetic test material.
+The included XML fixture is original synthetic test material licensed under AGPL-3.0-or-later.
 
 ## License
 
-MIT — see [LICENSE](https://github.com/openbimrs/dt/blob/main/LICENSE).
+AGPL-3.0-or-later — see [LICENSE](https://github.com/openbimrs/dt/blob/main/LICENSE).

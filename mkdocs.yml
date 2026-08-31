@@ -64,4 +64,4 @@ markdown_extensions:
 extra_css:
   - assets/stylesheets/extra.css
 
-copyright: OpenBIM.rs contributors · MIT-licensed source code
+copyright: OpenBIM.rs contributors · source code licensed under AGPL-3.0-or-later

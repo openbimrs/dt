@@ -112,7 +112,7 @@ No ISO, DIN, or CEN document, XSD, or annex example is distributed by this
 repository, its crate, or its documentation site. Legally accessed references
 belong under the ignored local `references/` directory.
 
-Public tests use an original synthetic fixture whose provenance and MIT
+Public tests use an original synthetic fixture whose provenance and AGPL-3.0-or-later
 redistribution terms are recorded beside it. Restricted Annex examples are
 never copied into `tests/fixtures/`.
 
@@ -140,4 +140,4 @@ checks from full schema or standard conformance.
 
 ## License
 
-MIT — see [`LICENSE`](https://github.com/openbimrs/dt/blob/main/LICENSE).
+AGPL-3.0-or-later — see [`LICENSE`](https://github.com/openbimrs/dt/blob/main/LICENSE).
