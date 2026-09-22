@@ -47,6 +47,12 @@ deps = p["dependencies"]
 deps = {dep["name"]: dep for dep in deps}
 assert set(deps) == {"getrandom", "quick-xml", "roxmltree"}, deps
 assert deps["getrandom"]["req"] == "^0.2.16", deps["getrandom"]["req"]
+# getrandom must stay scoped away from wasm32: it exists only for the CLI
+# OS-random temp-file token, and an unscoped dependency breaks every wasm32
+# consumer of the library (openbim-loin and downstream browser tools).
+assert deps["getrandom"]["target"] == "cfg(not(target_arch = \"wasm32\"))", deps["getrandom"]
+assert deps["quick-xml"].get("target") is None, deps["quick-xml"]
+assert deps["roxmltree"].get("target") is None, deps["roxmltree"]
 assert deps["quick-xml"]["req"] == "^0.41.0", deps["quick-xml"]["req"]
 assert not deps["quick-xml"]["uses_default_features"], deps["quick-xml"]
 assert deps["roxmltree"]["req"] == "^0.21.1", deps["roxmltree"]["req"]

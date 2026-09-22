@@ -19,6 +19,15 @@ name = "openbim-dt"
 path = "src/main.rs"
 
 [dependencies]
-getrandom = "0.2.16"
 quick-xml = { version = "0.41.0", default-features = false }
 roxmltree = { version = "0.21.1", default-features = false, features = ["std", "positions"] }
+
+# `getrandom` is used only by the `openbim-dt` binary, for the OS-random
+# temporary-file token in `atomic_replace`. As a plain dependency it was
+# forced on every library consumer and broke `wasm32-unknown-unknown`
+# outright. Scoping it to non-wasm targets frees library consumers without
+# touching native builds, where the CLI still resolves it normally. The
+# binary is not buildable for wasm, which is expected: it is a file-writing
+# CLI, and dependents compile only the library.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+getrandom = "0.2.16"
