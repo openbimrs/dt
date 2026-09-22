@@ -19,7 +19,7 @@ earlier one.
 | Versions | License |
 |---|---|
 | Up to and including `0.2.0` (published) | MIT |
-| Unpublished AGPL interval (`15e38f9` until this commit) | AGPL-3.0-or-later |
+| Unpublished AGPL interval (`15e38f9`..`be96c5b`) | AGPL-3.0-or-later |
 | `0.2.1` onwards | MIT |
 
 No release was ever published under `AGPL-3.0-or-later`: the relicense landed

@@ -37,7 +37,7 @@ packages = json.load(sys.stdin)["packages"]
 assert len(packages) == 1, packages
 p = packages[0]
 assert p["name"] == "openbim-dt", p["name"]
-assert p["version"] == "0.2.0", p["version"]
+assert p["version"] == "0.2.1", p["version"]
 assert p["rust_version"] == "1.85", p["rust_version"]
 assert p["license"] == "MIT", p["license"]
 assert p["repository"] == "https://github.com/openbimrs/dt", p["repository"]

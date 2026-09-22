@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-22
+
+### Fixed
+
+- Scoped `getrandom` to non-wasm targets so the library builds for
+  `wasm32-unknown-unknown`. It is used only by the CLI, for the OS-random
+  temporary-file token in `atomic_replace`, but as a plain dependency it
+  was forced on every library consumer and broke browser builds outright.
+  Native builds and the CLI are unchanged. The gate asserts the dependency
+  stays target-scoped.
+
 ### Changed
 
 - Relicensed repository-authored work from `AGPL-3.0-or-later` back to `MIT`.
@@ -135,7 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reserved `openbim-dt` with ISO 23387 edition 2 and draft-placeholder namespace
   constants.
 
-[Unreleased]: https://github.com/openbimrs/dt/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/openbimrs/dt/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/openbimrs/dt/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/openbimrs/dt/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/openbimrs/dt/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/openbimrs/dt/releases/tag/v0.1.0
