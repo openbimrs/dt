@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Relicensed repository-authored work from `AGPL-3.0-or-later` back to `MIT`.
+  No version was ever published under the AGPL — the relicense landed after
+  `0.2.0` and was reverted before any release carried it, so every published
+  version of `openbim-dt` is MIT. This also keeps the crate usable by its MIT
+  dependents, notably `openbim-loin`. `LICENSING.md` records the version
+  boundaries.
+
+
 ### Added
 
 - Added XML Schema validation of the ISO 23387 element grammar via

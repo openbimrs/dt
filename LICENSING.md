@@ -3,32 +3,48 @@
 ## Current license
 
 Unless a file or package states otherwise, repository-authored software and
-documentation are licensed under the **GNU Affero General Public License,
-version 3 or any later version** (`AGPL-3.0-or-later`). See [`LICENSE`](LICENSE).
+documentation are licensed under the **MIT License** (`MIT`). See
+[`LICENSE`](LICENSE).
 
-Section 13 of the AGPL requires an operator of a modified version that supports
-remote network interaction to offer the Corresponding Source prominently to
-users who interact with it remotely. The license does not require private
-modifications to be published or changes to be submitted upstream.
+The MIT License permits use, modification, distribution, sublicensing, and
+sale, including in proprietary and networked products, provided the copyright
+notice and permission notice are retained.
 
-## Historical MIT terms
+## Version history
 
-Repository-authored work in history before the commit that first replaced the
-top-level MIT license with the GNU AGPL was published under the MIT License. Those grants
-remain valid for the versions in which they were made. Verbatim copies of the
-former notices are preserved in `LICENSES/MIT.txt` and package-local
-`LICENSES/MIT.txt` files for attribution and compliance. Their preservation does
-not license post-transition changes under MIT.
+This repository has carried three licensing states. Each grant remains valid
+for the versions in which it was made; a later change does not revoke an
+earlier one.
+
+| Versions | License |
+|---|---|
+| Up to and including `0.2.0` (published) | MIT |
+| Unpublished AGPL interval (`15e38f9` until this commit) | AGPL-3.0-or-later |
+| `0.2.1` onwards | MIT |
+
+No release was ever published under `AGPL-3.0-or-later`: the relicense landed
+after `0.2.0` and is reverted here before any release carried it. Every
+published version of `openbim-dt` is MIT.
+
+This also keeps `openbim-dt` compatible with its MIT dependents: `openbim-loin`
+is MIT and depends on this crate, which an AGPL release would have broken.
+
+Verified against the crates.io versions API: `0.1.0`, `0.1.1` and `0.2.0` are
+all MIT.
 
 ## Third-party material
 
 Dependencies, standards, schemas, catalogs, fixtures, generated material, and
 other third-party content retain their own copyright and license terms. Their
-notices control where they differ from this repository's license. The OpenBIM.rs
-license grant does not cover material its contributors do not have the right to
-license.
+notices control where they differ from this repository's license. The
+OpenBIM.rs license grant does not cover material its contributors do not have
+the right to license.
+
+ISO 23387 schema and example artifacts are ISO copyright. They are not tracked
+or packaged by this repository; local copies belong under the ignored
+`references/` directory.
 
 ## Contributions
 
-Contributions are accepted under `AGPL-3.0-or-later` unless an explicitly signed
-agreement says otherwise. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Contributions are accepted under `MIT` unless an explicitly signed agreement
+says otherwise. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
