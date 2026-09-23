@@ -6,11 +6,16 @@ use crate::{
 };
 
 /// Owned `SubjectType` core shared by object types, groups, and data templates.
+///
+/// `SubjectType` requires at least one `HasPartRef` or `IsSubtypeOfRef`
+/// (a repeating choice with a minimum of one). `new` does not enforce this,
+/// so check a built value with its codec's schema validation before relying
+/// on it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subject {
     concept: Concept,
     has_part_refs: Vec<Reference>,
-    is_subtype_of_ref: Option<Reference>,
+    is_subtype_of_refs: Vec<Reference>,
 }
 
 impl Subject {
@@ -19,26 +24,43 @@ impl Subject {
         Self {
             concept,
             has_part_refs: Vec::new(),
-            is_subtype_of_ref: None,
+            is_subtype_of_refs: Vec::new(),
         }
     }
     #[must_use]
     pub const fn concept(&self) -> &Concept {
         &self.concept
     }
+    /// Mutable access to the shared `ConceptType` core.
+    pub fn concept_mut(&mut self) -> &mut Concept {
+        &mut self.concept
+    }
     #[must_use]
     pub fn has_part_refs(&self) -> &[Reference] {
         &self.has_part_refs
     }
-    #[must_use]
-    pub const fn is_subtype_of_ref(&self) -> Option<&Reference> {
-        self.is_subtype_of_ref.as_ref()
-    }
     pub fn add_has_part_ref(&mut self, value: Reference) {
         self.has_part_refs.push(value);
     }
+    /// `IsSubtypeOfRef` children; the schema permits any number.
+    #[must_use]
+    pub fn is_subtype_of_refs(&self) -> &[Reference] {
+        &self.is_subtype_of_refs
+    }
+    pub fn add_is_subtype_of_ref(&mut self, value: Reference) {
+        self.is_subtype_of_refs.push(value);
+    }
+    /// The first `IsSubtypeOfRef`, when present.
+    #[deprecated(since = "0.3.0", note = "use `is_subtype_of_refs`")]
+    #[must_use]
+    pub fn is_subtype_of_ref(&self) -> Option<&Reference> {
+        self.is_subtype_of_refs.first()
+    }
+    /// Replaces every `IsSubtypeOfRef` with `value` (none when `None`).
+    #[deprecated(since = "0.3.0", note = "use `add_is_subtype_of_ref`")]
     pub fn set_is_subtype_of_ref(&mut self, value: Option<Reference>) {
-        self.is_subtype_of_ref = value;
+        self.is_subtype_of_refs.clear();
+        self.is_subtype_of_refs.extend(value);
     }
 }
 
@@ -53,6 +75,10 @@ impl ObjectType {
     #[must_use]
     pub const fn subject(&self) -> &Subject {
         &self.0
+    }
+    /// Mutable access to the shared `SubjectType` core.
+    pub fn subject_mut(&mut self) -> &mut Subject {
+        &mut self.0
     }
     #[must_use]
     pub fn into_subject(self) -> Subject {
@@ -169,7 +195,7 @@ pub struct Property {
     concept: Concept,
     data_type: DataType,
     symbols: Vec<String>,
-    dimension_ref: Option<Reference>,
+    dimension_refs: Vec<Reference>,
     unit_refs: Vec<Reference>,
     quantity_kind_refs: Vec<Reference>,
     dependency_refs: Vec<Reference>,
@@ -182,7 +208,7 @@ impl Property {
             concept,
             data_type,
             symbols: Vec::new(),
-            dimension_ref: None,
+            dimension_refs: Vec::new(),
             unit_refs: Vec::new(),
             quantity_kind_refs: Vec::new(),
             dependency_refs: Vec::new(),
@@ -193,6 +219,10 @@ impl Property {
     pub const fn concept(&self) -> &Concept {
         &self.concept
     }
+    /// Mutable access to the shared `ConceptType` core.
+    pub fn concept_mut(&mut self) -> &mut Concept {
+        &mut self.concept
+    }
 
     #[must_use]
     pub const fn data_type(&self) -> &DataType {
@@ -202,9 +232,25 @@ impl Property {
     pub fn symbols(&self) -> &[String] {
         &self.symbols
     }
+    /// `DimensionRef` children; the schema permits any number.
     #[must_use]
-    pub const fn dimension_ref(&self) -> Option<&Reference> {
-        self.dimension_ref.as_ref()
+    pub fn dimension_refs(&self) -> &[Reference] {
+        &self.dimension_refs
+    }
+    pub fn add_dimension_ref(&mut self, value: Reference) {
+        self.dimension_refs.push(value);
+    }
+    /// The first `DimensionRef`, when present.
+    #[deprecated(since = "0.3.0", note = "use `dimension_refs`")]
+    #[must_use]
+    pub fn dimension_ref(&self) -> Option<&Reference> {
+        self.dimension_refs.first()
+    }
+    /// Replaces every `DimensionRef` with `value` (none when `None`).
+    #[deprecated(since = "0.3.0", note = "use `add_dimension_ref`")]
+    pub fn set_dimension_ref(&mut self, value: Option<Reference>) {
+        self.dimension_refs.clear();
+        self.dimension_refs.extend(value);
     }
     #[must_use]
     pub fn unit_refs(&self) -> &[Reference] {
@@ -224,9 +270,6 @@ impl Property {
     }
     pub fn add_symbol(&mut self, value: impl Into<String>) {
         self.symbols.push(value.into());
-    }
-    pub fn set_dimension_ref(&mut self, value: Option<Reference>) {
-        self.dimension_ref = value;
     }
     pub fn add_unit_ref(&mut self, value: Reference) {
         self.unit_refs.push(value);
@@ -260,6 +303,10 @@ impl QuantityKind {
     pub const fn concept(&self) -> &Concept {
         &self.concept
     }
+    /// Mutable access to the shared `ConceptType` core.
+    pub fn concept_mut(&mut self) -> &mut Concept {
+        &mut self.concept
+    }
     #[must_use]
     pub const fn dimension_ref(&self) -> &Reference {
         &self.dimension_ref
@@ -283,6 +330,10 @@ impl GroupOfProperties {
     #[must_use]
     pub const fn subject(&self) -> &Subject {
         &self.subject
+    }
+    /// Mutable access to the shared `SubjectType` core.
+    pub fn subject_mut(&mut self) -> &mut Subject {
+        &mut self.subject
     }
     #[must_use]
     pub fn property_refs(&self) -> &[Reference] {
@@ -319,6 +370,10 @@ impl ReferenceDocument {
     #[must_use]
     pub const fn concept(&self) -> &Concept {
         &self.concept
+    }
+    /// Mutable access to the shared `ConceptType` core.
+    pub fn concept_mut(&mut self) -> &mut Concept {
+        &mut self.concept
     }
     #[must_use]
     pub fn languages(&self) -> &[Language] {
@@ -379,6 +434,10 @@ impl Dimension {
     pub const fn concept(&self) -> &Concept {
         &self.concept
     }
+    /// Mutable access to the shared `ConceptType` core.
+    pub fn concept_mut(&mut self) -> &mut Concept {
+        &mut self.concept
+    }
     #[must_use]
     pub const fn exponents(&self) -> &[Decimal; 7] {
         &self.exponents
@@ -420,6 +479,10 @@ impl Unit {
     pub const fn concept(&self) -> &Concept {
         &self.concept
     }
+    /// Mutable access to the shared `ConceptType` core.
+    pub fn concept_mut(&mut self) -> &mut Concept {
+        &mut self.concept
+    }
     #[must_use]
     pub fn symbols(&self) -> &[MultiLanguageText] {
         &self.symbols
@@ -450,10 +513,13 @@ impl Unit {
 }
 
 /// ISO 23387 `DataTemplateType`.
+///
+/// The schema requires at least one of `HasObjectTypeRef`, `HasPropertyRef`
+/// or `HasGroupOfPropertiesRef`, on top of the `SubjectType` requirement.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataTemplate {
     subject: Subject,
-    object_type_ref: Option<Reference>,
+    object_type_refs: Vec<Reference>,
     property_refs: Vec<Reference>,
     group_of_properties_refs: Vec<Reference>,
 }
@@ -462,7 +528,7 @@ impl DataTemplate {
     pub const fn new(subject: Subject) -> Self {
         Self {
             subject,
-            object_type_ref: None,
+            object_type_refs: Vec::new(),
             property_refs: Vec::new(),
             group_of_properties_refs: Vec::new(),
         }
@@ -471,9 +537,23 @@ impl DataTemplate {
     pub const fn subject(&self) -> &Subject {
         &self.subject
     }
+    /// Mutable access to the shared `SubjectType` core.
+    pub fn subject_mut(&mut self) -> &mut Subject {
+        &mut self.subject
+    }
+    /// `HasObjectTypeRef` children; the schema permits any number.
     #[must_use]
-    pub const fn object_type_ref(&self) -> Option<&Reference> {
-        self.object_type_ref.as_ref()
+    pub fn object_type_refs(&self) -> &[Reference] {
+        &self.object_type_refs
+    }
+    pub fn add_object_type_ref(&mut self, value: Reference) {
+        self.object_type_refs.push(value);
+    }
+    /// The first `HasObjectTypeRef`, when present.
+    #[deprecated(since = "0.3.0", note = "use `object_type_refs`")]
+    #[must_use]
+    pub fn object_type_ref(&self) -> Option<&Reference> {
+        self.object_type_refs.first()
     }
     #[must_use]
     pub fn property_refs(&self) -> &[Reference] {
@@ -489,7 +569,10 @@ impl DataTemplate {
     pub fn add_group_of_properties_ref(&mut self, value: Reference) {
         self.group_of_properties_refs.push(value);
     }
+    /// Replaces every `HasObjectTypeRef` with `value` (none when `None`).
+    #[deprecated(since = "0.3.0", note = "use `add_object_type_ref`")]
     pub fn set_object_type_ref(&mut self, value: Option<Reference>) {
-        self.object_type_ref = value;
+        self.object_type_refs.clear();
+        self.object_type_refs.extend(value);
     }
 }

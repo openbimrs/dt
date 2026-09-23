@@ -59,8 +59,8 @@ fn owned_type_contracts_enforce_annex_e_required_content() {
     assert_eq!(group.property_refs(), &[property_ref]);
 
     let mut template = DataTemplate::new(subject);
-    template.set_object_type_ref(Some(dimension_ref));
-    assert!(template.object_type_ref().is_some());
+    template.add_object_type_ref(dimension_ref);
+    assert_eq!(template.object_type_refs().len(), 1);
 }
 
 #[test]
@@ -99,4 +99,44 @@ fn scalar_heavy_types_retain_validated_dt_values() {
     document.add_language(Language::from_str("de").unwrap());
     assert_eq!(document.languages()[0].as_str(), "en");
     assert_eq!(document.languages()[1].as_str(), "de");
+}
+
+/// 0.2 exposed these fields as `Option`, but the schema declares them 0..*.
+/// The deprecated shims keep their 0.2 meaning: the getter returns the
+/// first entry and the setter replaces every entry with at most one.
+#[test]
+#[allow(deprecated)]
+fn widened_references_keep_their_singular_shims() {
+    let first = reference("70000000-0000-0000-0000-000000000000");
+    let second = reference("71000000-0000-0000-0000-000000000000");
+
+    let mut subject = Subject::new(concept("72000000-0000-0000-0000-000000000000"));
+    subject.add_is_subtype_of_ref(first.clone());
+    subject.add_is_subtype_of_ref(second.clone());
+    assert_eq!(
+        subject.is_subtype_of_refs(),
+        &[first.clone(), second.clone()]
+    );
+    assert_eq!(subject.is_subtype_of_ref(), Some(&first));
+    subject.set_is_subtype_of_ref(Some(second.clone()));
+    assert_eq!(subject.is_subtype_of_refs(), &[second.clone()]);
+    subject.set_is_subtype_of_ref(None);
+    assert!(subject.is_subtype_of_refs().is_empty());
+
+    let mut property = Property::new(
+        concept("73000000-0000-0000-0000-000000000000"),
+        DataType::new(Some(DataTypeName::Real)),
+    );
+    property.add_dimension_ref(first.clone());
+    property.add_dimension_ref(second.clone());
+    assert_eq!(property.dimension_ref(), Some(&first));
+    property.set_dimension_ref(None);
+    assert!(property.dimension_refs().is_empty());
+
+    let mut template = DataTemplate::new(subject);
+    template.add_object_type_ref(first.clone());
+    template.add_object_type_ref(second.clone());
+    assert_eq!(template.object_type_ref(), Some(&first));
+    template.set_object_type_ref(Some(second.clone()));
+    assert_eq!(template.object_type_refs(), &[second]);
 }

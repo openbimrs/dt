@@ -240,21 +240,59 @@ impl Reference {
     }
 }
 
-/// Owned core of ISO 23387 `ConceptType` for reuse by dependent standards.
+/// Generates a slice getter and an appending adder for a repeatable field.
+macro_rules! list_accessors {
+    ($($(#[$doc:meta])* $field:ident: $ty:ty => $getter:ident, $adder:ident;)*) => {
+        $(
+            $(#[$doc])*
+            #[must_use]
+            pub fn $getter(&self) -> &[$ty] {
+                &self.$field
+            }
+            $(#[$doc])*
+            pub fn $adder(&mut self, value: $ty) {
+                self.$field.push(value);
+            }
+        )*
+    };
+}
+pub(crate) use list_accessors;
+
+/// Owned ISO 23387 `ConceptType`: every attribute and child it declares.
 ///
-/// Format codecs retain the complete XML tree separately; this value is the
-/// stable, application-facing subset shared by DT and standards such as LOIN.
+/// Each field corresponds to exactly one declared child element (or
+/// attribute), and every repeatable child is a `Vec`, so a value decoded by
+/// [`Concept`]-bearing `from_element` codecs holds everything the schema
+/// permits. `ConceptType` content is a repeating choice, so child order
+/// carries no meaning and is not stored.
+///
+/// The schema requires at least one child from the choice, and `new` always
+/// supplies a name. `from_identity` builds an empty concept for decoders and
+/// callers that add content afterwards.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Concept {
     guid: Guid,
     date_of_creation: DateTime,
+    about: Option<AnyUri>,
     names: Vec<MultiLanguageText>,
-    definition: MultiLanguageText,
-    references: Vec<Reference>,
+    definitions: Vec<MultiLanguageText>,
+    descriptions: Vec<MultiLanguageText>,
+    examples: Vec<MultiLanguageText>,
+    reference_document_refs: Vec<Reference>,
+    similar_to_refs: Vec<Reference>,
+    replaced_objects_refs: Vec<Reference>,
+    dictionary_refs: Vec<Reference>,
+    languages_of_creator: Vec<Language>,
+    countries_of_origin: Vec<String>,
+    visual_representations: Vec<Base64Binary>,
+    major_versions: Vec<NonNegativeInteger>,
+    minor_versions: Vec<NonNegativeInteger>,
+    statuses: Vec<String>,
+    deprecation_explanations: Vec<String>,
 }
 
 impl Concept {
-    /// Creates an Annex E-valid required `ConceptType` core.
+    /// Creates a concept with one name and one definition.
     #[must_use]
     pub fn new(
         guid: Guid,
@@ -262,12 +300,36 @@ impl Concept {
         first_name: MultiLanguageText,
         definition: MultiLanguageText,
     ) -> Self {
+        let mut concept = Self::from_identity(guid, date_of_creation);
+        concept.names.push(first_name);
+        concept.definitions.push(definition);
+        concept
+    }
+
+    /// Creates a concept carrying only its required attributes.
+    ///
+    /// It is not schema-valid until at least one child is added.
+    #[must_use]
+    pub const fn from_identity(guid: Guid, date_of_creation: DateTime) -> Self {
         Self {
             guid,
             date_of_creation,
-            names: vec![first_name],
-            definition,
-            references: Vec::new(),
+            about: None,
+            names: Vec::new(),
+            definitions: Vec::new(),
+            descriptions: Vec::new(),
+            examples: Vec::new(),
+            reference_document_refs: Vec::new(),
+            similar_to_refs: Vec::new(),
+            replaced_objects_refs: Vec::new(),
+            dictionary_refs: Vec::new(),
+            languages_of_creator: Vec::new(),
+            countries_of_origin: Vec::new(),
+            visual_representations: Vec::new(),
+            major_versions: Vec::new(),
+            minor_versions: Vec::new(),
+            statuses: Vec::new(),
+            deprecation_explanations: Vec::new(),
         }
     }
 
@@ -281,31 +343,83 @@ impl Concept {
         self.date_of_creation.as_str()
     }
 
+    /// The `dt:about` attribute, when present.
     #[must_use]
-    pub fn names(&self) -> &[MultiLanguageText] {
-        &self.names
+    pub fn about(&self) -> Option<&str> {
+        self.about.as_ref().map(AnyUri::as_str)
     }
 
-    #[must_use]
-    pub const fn definition(&self) -> &MultiLanguageText {
-        &self.definition
+    pub fn set_about(&mut self, value: Option<AnyUri>) {
+        self.about = value;
     }
 
+    /// The first `Definition`, when present.
+    ///
+    /// `ConceptType` permits any number of definitions (typically one per
+    /// language); use [`Concept::definitions`] to see all of them.
+    #[must_use]
+    pub fn definition(&self) -> Option<&MultiLanguageText> {
+        self.definitions.first()
+    }
+
+    /// Replaces every definition with `definition`.
+    pub fn set_definition(&mut self, definition: MultiLanguageText) {
+        self.definitions.clear();
+        self.definitions.push(definition);
+    }
+
+    /// `ReferenceDocumentRef` children.
+    #[deprecated(since = "0.3.0", note = "use `reference_document_refs`")]
     #[must_use]
     pub fn references(&self) -> &[Reference] {
-        &self.references
+        &self.reference_document_refs
     }
 
-    pub fn add_name(&mut self, name: MultiLanguageText) {
-        self.names.push(name);
-    }
-
-    pub fn set_definition(&mut self, definition: MultiLanguageText) {
-        self.definition = definition;
-    }
-
+    /// Appends a `ReferenceDocumentRef`.
+    #[deprecated(since = "0.3.0", note = "use `add_reference_document_ref`")]
     pub fn add_reference(&mut self, reference: Reference) {
-        self.references.push(reference);
+        self.reference_document_refs.push(reference);
+    }
+
+    list_accessors! {
+        /// `Name` children.
+        names: MultiLanguageText => names, add_name;
+        /// `Definition` children.
+        definitions: MultiLanguageText => definitions, add_definition;
+        /// `Description` children.
+        descriptions: MultiLanguageText => descriptions, add_description;
+        /// `Example` children.
+        examples: MultiLanguageText => examples, add_example;
+        /// `ReferenceDocumentRef` children.
+        reference_document_refs: Reference => reference_document_refs, add_reference_document_ref;
+        /// `SimilarToRef` children.
+        similar_to_refs: Reference => similar_to_refs, add_similar_to_ref;
+        /// `ReplacedObjectsRef` children.
+        replaced_objects_refs: Reference => replaced_objects_refs, add_replaced_objects_ref;
+        /// `DictionaryRef` children.
+        dictionary_refs: Reference => dictionary_refs, add_dictionary_ref;
+        /// `LanguageOfCreator` children.
+        languages_of_creator: Language => languages_of_creator, add_language_of_creator;
+        /// `CountryOfOrigin` children.
+        countries_of_origin: String => countries_of_origin, add_country_of_origin;
+        /// `VisualRepresentation` children.
+        visual_representations: Base64Binary => visual_representations, add_visual_representation;
+        /// `MajorVersion` children.
+        major_versions: NonNegativeInteger => major_versions, add_major_version;
+        /// `MinorVersion` children.
+        minor_versions: NonNegativeInteger => minor_versions, add_minor_version;
+        /// `Status` children.
+        statuses: String => statuses, add_status;
+        /// `DeprecationExplanation` children.
+        deprecation_explanations: String => deprecation_explanations, add_deprecation_explanation;
+    }
+
+    pub(crate) const fn date_of_creation_value(&self) -> &DateTime {
+        &self.date_of_creation
+    }
+
+    pub(crate) const fn about_value(&self) -> Option<&AnyUri> {
+        self.about.as_ref()
     }
 }
 
@@ -373,6 +487,18 @@ impl From<&str> for Scale {
     }
 }
 
+impl Scale {
+    /// Wire spelling; the inverse of `From<&str>`.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Linear => "LINEAR",
+            Self::Logarithmic => "LOGARITHMIC",
+            Self::Other(value) => value,
+        }
+    }
+}
+
 /// Unit logarithm base with forward-compatible retention.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Base {
@@ -393,6 +519,21 @@ impl From<&str> for Base {
             "PI" => Self::Pi,
             "TEN" => Self::Ten,
             other => Self::Other(other.to_owned()),
+        }
+    }
+}
+
+impl Base {
+    /// Wire spelling; the inverse of `From<&str>`.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::One => "ONE",
+            Self::Two => "TWO",
+            Self::E => "E",
+            Self::Pi => "PI",
+            Self::Ten => "TEN",
+            Self::Other(value) => value,
         }
     }
 }

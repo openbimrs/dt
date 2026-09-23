@@ -108,18 +108,60 @@ fn concept_contract_is_reusable_by_standards_that_extend_concept_type() {
         MultiLanguageText::new("en", "Fire safety purpose").unwrap(),
         MultiLanguageText::new("en", "Synthetic definition").unwrap(),
     );
-    concept.add_reference(Reference::new(Some(guid), None));
+    concept.add_reference_document_ref(Reference::new(Some(guid), None));
 
     assert_eq!(
         concept.guid().as_str(),
         "44444444-4444-4444-4444-444444444444"
     );
     assert_eq!(concept.names()[0].text(), "Fire safety purpose");
-    assert_eq!(concept.definition().text(), "Synthetic definition");
-    assert_eq!(concept.references().len(), 1);
+    assert_eq!(
+        concept.definition().map(MultiLanguageText::text),
+        Some("Synthetic definition")
+    );
+    assert_eq!(concept.reference_document_refs().len(), 1);
     assert_eq!(concept.date_of_creation(), "2026-08-25T00:00:00Z");
     assert!(DateTime::from_str("not-a-date").is_err());
     assert!(DateTime::from_str("02024-01-01T00:00:00Z").is_err());
     assert!(DateTime::from_str("2024-01-01T24:00:00.0Z").is_ok());
     assert!(DateTime::from_str("2024-01-01T24:00:00.001Z").is_err());
+}
+
+/// The 0.2 `references`/`add_reference` API keeps its meaning: it is the
+/// `ReferenceDocumentRef` list, now also reachable by its schema name.
+#[test]
+#[allow(deprecated)]
+fn deprecated_reference_aliases_address_reference_document_refs() {
+    let guid = Guid::from_str("55555555-5555-5555-5555-555555555555").unwrap();
+    let mut concept = Concept::new(
+        guid.clone(),
+        DateTime::from_str("2026-08-25T00:00:00Z").unwrap(),
+        MultiLanguageText::new("en", "Name").unwrap(),
+        MultiLanguageText::new("en", "Definition").unwrap(),
+    );
+    concept.add_reference(Reference::new(Some(guid.clone()), None));
+    concept.add_reference_document_ref(Reference::new(None, None));
+    assert_eq!(concept.references(), concept.reference_document_refs());
+    assert_eq!(concept.references().len(), 2);
+    assert!(concept.similar_to_refs().is_empty());
+    assert!(concept.dictionary_refs().is_empty());
+}
+
+/// `set_definition` keeps its 0.2 meaning of "the definition is this one".
+#[test]
+fn set_definition_replaces_every_definition() {
+    let mut concept = Concept::new(
+        Guid::from_str("66666666-6666-6666-6666-666666666666").unwrap(),
+        DateTime::from_str("2026-08-25T00:00:00Z").unwrap(),
+        MultiLanguageText::new("en", "Name").unwrap(),
+        MultiLanguageText::new("en", "First").unwrap(),
+    );
+    concept.add_definition(MultiLanguageText::new("de", "Zweite").unwrap());
+    assert_eq!(concept.definitions().len(), 2);
+    concept.set_definition(MultiLanguageText::new("en", "Only").unwrap());
+    assert_eq!(concept.definitions().len(), 1);
+    assert_eq!(
+        concept.definition().map(MultiLanguageText::text),
+        Some("Only")
+    );
 }
