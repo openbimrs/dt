@@ -2,11 +2,13 @@
 """Regenerate `openbim-dt/src/schema.rs` from a derived structural catalog.
 
 The catalog is a structural summary (element names, cardinalities, datatype
-facets) derived from a legally accessed local copy of the ISO 23387 schema.
-Neither the schema nor its prose is read, vendored, or reproduced here: the
-generated tables contain only the grammar facts needed to validate instances.
+facets) derived from a legally accessed local copy of the ISO 23387 schema by
+`generate-schema-catalog.py`. Neither the schema nor its prose is read,
+vendored, or reproduced here: the generated tables contain only the grammar
+facts needed to validate instances.
 
 Usage:
+    generate-schema-catalog.py references/ISO-23387.xsd <catalog.json>
     generate-schema-tables.py <catalog.json> [output.rs]
     cargo fmt --all
 

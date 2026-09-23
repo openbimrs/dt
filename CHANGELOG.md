@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Schema validation rejected every valid `ObjectType`, `Property`,
+  `GroupOfProperties` and `DataTemplate` inside a `Library`. Those four
+  children are declared by reference to the global element
+  (`<xs:element ref=...>`), and the table pipeline gave each an empty
+  local definition instead of the global type. The pipeline now resolves
+  element references, and the regenerated tables differ only in those four
+  `Library` edges.
+
+### Added
+
+- `scripts/generate-schema-catalog.py`, the first stage of the schema-table
+  pipeline (XSD to structural catalog), so both stages are reproducible
+  from the repository. It still reads only a local, ignored copy of the XSD.
+
 ## [0.2.1] - 2026-09-22
 
 ### Fixed
