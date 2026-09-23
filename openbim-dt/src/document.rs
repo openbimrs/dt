@@ -164,6 +164,32 @@ impl Attribute {
         }
     }
 
+    /// Builds an unqualified or prefixed attribute for programmatic construction.
+    ///
+    /// `namespace_uri` is the attribute's resolved namespace, independent of
+    /// `prefix`: callers building a standalone tree are responsible for also
+    /// declaring the `xmlns:*` binding on an enclosing element if one is
+    /// required, since this constructor does not synthesize declarations.
+    #[must_use]
+    pub fn new(
+        prefix: Option<&str>,
+        local_name: &str,
+        namespace_uri: Option<&str>,
+        value: impl Into<String>,
+    ) -> Self {
+        let qname = match prefix {
+            Some(prefix) if !prefix.is_empty() => format!("{prefix}:{local_name}"),
+            _ => local_name.to_owned(),
+        };
+        Self {
+            qname,
+            prefix: prefix.filter(|value| !value.is_empty()).map(str::to_owned),
+            local_name: local_name.to_owned(),
+            namespace_uri: namespace_uri.map(Arc::from),
+            value: value.into(),
+        }
+    }
+
     #[must_use]
     pub fn qname(&self) -> &str {
         &self.qname
@@ -249,6 +275,58 @@ impl Element {
 
     pub(crate) fn set_close_span(&mut self, span: Option<Span>) {
         self.close_span = span;
+    }
+
+    /// Builds a fresh element with no retained source provenance.
+    ///
+    /// `namespace` is the element's resolved namespace URI, independent of
+    /// `prefix`. Elements built this way carry no spans, so
+    /// [`Document::to_xml_string`] works on them but
+    /// [`Document::to_xml_string_exact`] fails closed with
+    /// [`ExactWriteError::NoSource`] — there is no retained source to slice.
+    /// This constructor does not emit an `xmlns` declaration for `namespace`;
+    /// use [`Document::standalone`] to wrap a built root with the `xmlns:dt`
+    /// binding codecs need.
+    #[must_use]
+    pub fn new(namespace: Option<&str>, prefix: Option<&str>, local_name: &str) -> Self {
+        let prefix = prefix.filter(|value| !value.is_empty()).map(str::to_owned);
+        let qname = match &prefix {
+            Some(prefix) => format!("{prefix}:{local_name}"),
+            None => local_name.to_owned(),
+        };
+        Self {
+            qname,
+            prefix,
+            local_name: local_name.to_owned(),
+            namespace_uri: namespace.map(Arc::from),
+            attributes: Vec::new(),
+            nodes: NodeList::new(),
+            empty_style: false,
+            open_span: None,
+            close_span: None,
+        }
+    }
+
+    /// Appends an attribute, returning `self` for chained construction.
+    #[must_use]
+    pub fn with_attribute(mut self, attribute: Attribute) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
+
+    /// Appends a child element as a node, returning `self` for chained
+    /// construction.
+    #[must_use]
+    pub fn with_child(mut self, child: Element) -> Self {
+        self.nodes.push(Node::Element(child), None);
+        self
+    }
+
+    /// Appends a text node, returning `self` for chained construction.
+    #[must_use]
+    pub fn with_text(mut self, text: impl Into<String>) -> Self {
+        self.nodes.push(Node::Text(text.into()), None);
+        self
     }
 
     /// The element's full source extent: `<a …>` through `</a>`, or the single
@@ -491,6 +569,33 @@ impl Document {
 
     pub(crate) fn take_root(self) -> Element {
         self.root
+    }
+
+    /// Builds a standalone document from a built root, adding the `xmlns:dt`
+    /// declaration codecs need.
+    ///
+    /// `to_element` on owned types deliberately emits no `xmlns` declarations
+    /// — the embedding document owns them (LOIN embeds `dt:`-qualified
+    /// children under an unqualified LOIN-local outer element). This
+    /// constructor exists for callers, including this crate's own schema
+    /// validation tests, that need a document whose root is dt-namespaced and
+    /// self-contained.
+    #[must_use]
+    pub fn standalone(root: Element) -> Self {
+        let root = root.with_attribute(Attribute::new(
+            Some("xmlns"),
+            "dt",
+            Some("http://www.w3.org/2000/xmlns/"),
+            crate::NAMESPACE,
+        ));
+        Self {
+            declaration: None,
+            prolog: NodeList::new(),
+            root,
+            epilog: NodeList::new(),
+            source: None,
+            declaration_span: None,
+        }
     }
 }
 
