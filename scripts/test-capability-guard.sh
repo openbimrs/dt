@@ -10,6 +10,7 @@ value=openbim-dt/src/value.rs
 domain=openbim-dt/src/domain.rs
 cli=openbim-dt/src/main.rs
 conformance=openbim-dt/src/conformance.rs
+codec=openbim-dt/src/codec.rs
 backup=$(mktemp -d)
 cp "$parser" "$backup/parser.rs"
 cp "$writer" "$backup/document.rs"
@@ -18,6 +19,7 @@ cp "$value" "$backup/value.rs"
 cp "$domain" "$backup/domain.rs"
 cp "$cli" "$backup/main.rs"
 cp "$conformance" "$backup/conformance.rs"
+cp "$codec" "$backup/codec.rs"
 
 restore() {
     cp "$backup/parser.rs" "$parser"
@@ -27,6 +29,7 @@ restore() {
     cp "$backup/domain.rs" "$domain"
     cp "$backup/main.rs" "$cli"
     cp "$backup/conformance.rs" "$conformance"
+    cp "$backup/codec.rs" "$codec"
     rm -rf "$backup"
 }
 trap restore EXIT INT TERM
@@ -136,8 +139,8 @@ expect_killed positive-integer cargo test -p openbim-dt --test value_types decim
 cp "$backup/value.rs" "$value"
 
 replace_exact "$value" \
-'            names: vec![first_name],' \
-'            names: Vec::new(),'
+'        concept.names.push(first_name);' \
+'        let _ = first_name;'
 expect_killed concept-required-name cargo test -p openbim-dt --test value_types concept_contract_is_reusable_by_standards_that_extend_concept_type
 cp "$backup/value.rs" "$value"
 
@@ -231,5 +234,43 @@ replace_exact "$conformance" \
 '    character.is_whitespace()'
 expect_killed schema-xsd-whitespace cargo test -p openbim-dt --test schema_conformance collapses_only_the_four_xml_schema_whitespace_characters
 cp "$backup/conformance.rs" "$conformance"
+
+# Owned-type codec. Each probe removes one guarantee; a named test must fail.
+# Decoding must refuse attributes it cannot hold rather than drop them.
+replace_exact "$codec" \
+'    refuse_unrepresented_attributes(element, CONCEPT_ATTRIBUTES)?;' \
+''
+expect_killed codec-refuses-attributes cargo test -p openbim-dt --test codec_refusals unknown_and_misqualified_attributes_are_refused
+cp "$backup/codec.rs" "$codec"
+
+# Writing must emit children in schema order, not insertion order.
+replace_exact "$codec" \
+'        for rule in order {' \
+'        for rule in order.iter().rev() {'
+expect_killed codec-schema-order cargo test -p openbim-dt --test owned_codec
+cp "$backup/codec.rs" "$codec"
+
+# Every declared field must round-trip; skipping one on read must be caught.
+# The mutation must still compile, or "killed" would only prove a build error.
+replace_exact "$codec" \
+'    for value in children.references("IsSubtypeOfRef")? {' \
+'    for value in children.references("IsSubtypeOfRef")?.into_iter().skip(1) {'
+expect_killed codec-reads-every-field cargo test -p openbim-dt --test owned_codec object_type_round_trips_and_validates
+cp "$backup/codec.rs" "$codec"
+
+# Dimension exponents are positional; writing them misordered must be caught.
+replace_exact "$codec" \
+'            children.simple(name, [exponent.as_str()]);' \
+'            children.simple(name, ["0"]);'
+expect_killed codec-dimension-exponents cargo test -p openbim-dt --test owned_codec dimension_round_trips_and_validates
+cp "$backup/codec.rs" "$codec"
+
+# The drift guard must notice a declared child the writer never emits. Only
+# the unit test is run, so this proves the guard itself, not the round trip.
+replace_exact "$codec" \
+'    children.references("DictionaryRef", concept.dictionary_refs());' \
+'    let _ = concept.dictionary_refs();'
+expect_killed codec-drift-guard cargo test -p openbim-dt --lib codec::drift
+cp "$backup/codec.rs" "$codec"
 
 cargo fmt --all -- --check

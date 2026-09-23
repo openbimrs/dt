@@ -22,6 +22,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/generate-schema-catalog.py`, the first stage of the schema-table
   pipeline (XSD to structural catalog), so both stages are reproducible
   from the repository. It still reads only a local, ignored copy of the XSD.
+- Lossless XML codec for every owned ISO 23387 type: `to_element` and
+  `from_element` on `ObjectType`, `Property`, `GroupOfProperties`,
+  `DataTemplate`, `QuantityKind`, `Dimension`, `Unit`, `ReferenceDocument`,
+  `Subject`, and `Concept::to_element_named`. Children are written in
+  schema order, taken from the generated tables. Decoding fails closed with
+  a structured `CodecError` (`CodecErrorKind` names the failure, the path
+  names the element) instead of dropping content it cannot represent.
+- Public `Element`/`Attribute` builders and `Document::standalone`, so
+  other crates can construct ISO 23387 trees.
+- `NonNegativeInteger` and `Base64Binary` lexical types.
+- `Scale::as_str` and `Base::as_str`, the inverses of their `From<&str>`.
+- `concept_mut`/`subject_mut` on every owned type.
+
+### Changed
+
+- Owned types hold everything the schema declares. `Concept` gained every
+  `ConceptType` child (definitions, descriptions, examples, four reference
+  kinds, languages, countries, visual representations, versions, statuses,
+  deprecation explanations, and `about`). `Concept::definition` now returns
+  `Option<&MultiLanguageText>`, the first definition.
+- `Subject::is_subtype_of_refs`, `Property::dimension_refs` and
+  `DataTemplate::object_type_refs` replace single-valued fields the schema
+  declares as repeating. The singular getters and setters remain as
+  deprecated aliases that read the first entry and replace all entries.
+- `ValueErrorKind` is `#[non_exhaustive]`.
+
+### Deprecated
+
+- `Concept::references`/`add_reference` (use `reference_document_refs`),
+  `Subject::is_subtype_of_ref`/`set_is_subtype_of_ref`,
+  `Property::dimension_ref`/`set_dimension_ref`,
+  `DataTemplate::object_type_ref`/`set_object_type_ref`.
 
 ## [0.2.1] - 2026-09-22
 

@@ -36,6 +36,7 @@
 
 #![forbid(unsafe_code)]
 
+mod codec;
 mod conformance;
 mod document;
 mod domain;
@@ -44,6 +45,7 @@ mod parser;
 mod schema;
 mod value;
 
+pub use codec::{CodecError, CodecErrorKind};
 pub use conformance::{SchemaReport, SchemaViolation, SchemaViolationCode};
 
 pub use document::{
