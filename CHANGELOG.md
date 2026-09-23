@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-23
+
 ### Fixed
 
 - Schema validation rejected every valid `ObjectType`, `Property`,
@@ -194,7 +196,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reserved `openbim-dt` with ISO 23387 edition 2 and draft-placeholder namespace
   constants.
 
-[Unreleased]: https://github.com/openbimrs/dt/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/openbimrs/dt/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/openbimrs/dt/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/openbimrs/dt/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/openbimrs/dt/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/openbimrs/dt/compare/v0.1.0...v0.1.1

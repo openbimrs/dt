@@ -6,13 +6,16 @@ that executable scope from schema-complete conformance and governance work.
 
 ## Current baseline
 
-Implemented in the `0.2` source line:
+Implemented in the `0.3` source line:
 
 - edition 2 and draft-placeholder namespace identities;
 - reusable GUID, multilingual text, reference, rational, data-type, unit/base,
   and concept contracts;
 - bounded XML parsing and semantic writing with unknown-content retention;
 - global DT family views and owned typed wrappers;
+- owned types that hold every declared attribute and child, with a lossless
+  `to_element`/`from_element` codec per type;
+- XSD element-grammar validation and byte-identical XML output;
 - structured built-in validation diagnostics;
 - CLI inspection, validation, and rewrite operations;
 - synthetic fixture provenance, mutation probes, packaging leakage checks, API
@@ -20,10 +23,8 @@ Implemented in the `0.2` source line:
 
 Not implemented:
 
-- full XSD validation or clause-by-clause ISO 23387 conformance;
-- complete format-neutral owned representations for every optional ConceptType
-  field;
-- byte-identical XML output;
+- full clause-level ISO 23387 conformance (the XSD element grammar is
+  validated; prose clauses and cross-document references are not);
 - ISO 23386 governance workflows;
 - ISO 12006-3 mapping;
 - a bSDD adapter.

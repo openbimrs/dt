@@ -25,14 +25,15 @@ exact child revision at `packages/dt`.
 
 ## Capability status
 
-The `0.2` source line is an implemented codec and contract layer, not a claim of
+The `0.3` source line is an implemented codec and contract layer, not a claim of
 complete ISO conformance.
 
 | Capability | Status |
 | --- | --- |
 | ISO 23387 edition 2 and known draft namespace identities | Implemented and unit-tested |
 | GUID, date-time, language/decimal, any-URI/reference, multilingual text, rational, unit-scale/base, data-type/value-list, and reusable concept contracts | Implemented |
-| Owned complex-type contracts | Subject, object type, property, group, quantity kind, reference document, dimension, unit, data template, and ordered value-list cores |
+| Owned complex-type contracts | Subject, object type, property, group, quantity kind, reference document, dimension, unit, and data template, holding every attribute and child the schema declares |
+| Owned-type XML codec | Implemented; `to_element`/`from_element` per owned type, schema-ordered output, fail-closed decoding with `CodecError` |
 | Bounded namespace-aware XML 1.0 parser | Implemented; strict well-formedness and namespace checks precede event indexing |
 | XML writer | Implemented; semantic round trips retain element/attribute order, namespaces, comments, PI, CDATA, and unknown content |
 | Typed global-root views | Implemented for Library, DataTemplate, ObjectType, GroupOfProperties, and Property |
