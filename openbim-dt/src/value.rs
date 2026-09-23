@@ -33,7 +33,11 @@ impl fmt::Display for ValueError {
 impl Error for ValueError {}
 
 /// Lexical contracts checked by [`ValueError`].
+///
+/// Non-exhaustive: new ISO 23387 lexical contracts are added as the owned
+/// model grows, and matching code must keep a wildcard arm.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum ValueErrorKind {
     /// ISO 23387 `GuidType`.
     Guid,
@@ -51,6 +55,10 @@ pub enum ValueErrorKind {
     CreationDate,
     /// XML Schema `anyURI`.
     Uri,
+    /// XML Schema `nonNegativeInteger`.
+    NonNegativeInteger,
+    /// XML Schema `base64Binary`.
+    Base64Binary,
 }
 
 /// An ISO 23387 GUID, preserving its validated source spelling.
@@ -443,6 +451,106 @@ impl FromStr for PositiveInteger {
         valid
             .then(|| Self(value.clone()))
             .ok_or_else(|| ValueError::new(ValueErrorKind::PositiveInteger, value))
+    }
+}
+
+/// XML Schema `nonNegativeInteger`, preserving the validated source lexeme.
+///
+/// The lexeme is kept verbatim after whitespace collapse (`007` stays `007`),
+/// so the type is unbounded and round trips are exact.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct NonNegativeInteger(String);
+
+impl NonNegativeInteger {
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl FromStr for NonNegativeInteger {
+    type Err = ValueError;
+
+    /// Accepts `[+]?[0-9]+`, and `-0` style zero, per the XSD lexical space.
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        let value = collapse_whitespace(value);
+        let (negative, digits) = match value.strip_prefix('-') {
+            Some(rest) => (true, rest),
+            None => (false, value.strip_prefix('+').unwrap_or(&value)),
+        };
+        let valid = !digits.is_empty()
+            && digits.bytes().all(|byte| byte.is_ascii_digit())
+            && (!negative || digits.bytes().all(|byte| byte == b'0'));
+        valid
+            .then(|| Self(value.clone()))
+            .ok_or_else(|| ValueError::new(ValueErrorKind::NonNegativeInteger, value))
+    }
+}
+
+/// XML Schema `base64Binary`, preserving the validated source lexeme.
+///
+/// Validation follows the XSD 1.1 canonical-lexical grammar: whitespace-
+/// separated base64 characters in groups of four, with at most two `=` pad
+/// characters at the end whose preceding character is restricted so the
+/// padding bits are zero. The empty value is valid (zero octets).
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Base64Binary(String);
+
+impl Base64Binary {
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl FromStr for Base64Binary {
+    type Err = ValueError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        let collapsed = collapse_whitespace(value);
+        is_base64_lexeme(&collapsed)
+            .then(|| Self(collapsed.clone()))
+            .ok_or_else(|| ValueError::new(ValueErrorKind::Base64Binary, collapsed))
+    }
+}
+
+fn is_base64_lexeme(value: &str) -> bool {
+    let symbols: Vec<u8> = value.bytes().filter(|byte| *byte != b' ').collect();
+    if symbols.len() % 4 != 0 {
+        return false;
+    }
+    let padding = symbols
+        .iter()
+        .rev()
+        .take_while(|byte| **byte == b'=')
+        .count();
+    if padding > 2 {
+        return false;
+    }
+    let body = &symbols[..symbols.len() - padding];
+    if !body
+        .iter()
+        .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'/'))
+    {
+        return false;
+    }
+    // The last data character before padding may only carry zero padding bits:
+    // one pad => B04 alphabet (value % 4 == 0), two pads => B16 (value % 16 == 0).
+    match (padding, body.last()) {
+        (0, _) | (_, None) => padding == 0,
+        (1, Some(&last)) => base64_value(last) % 4 == 0,
+        (2, Some(&last)) => base64_value(last) % 16 == 0,
+        _ => false,
+    }
+}
+
+const fn base64_value(byte: u8) -> u8 {
+    match byte {
+        b'A'..=b'Z' => byte - b'A',
+        b'a'..=b'z' => byte - b'a' + 26,
+        b'0'..=b'9' => byte - b'0' + 52,
+        b'+' => 62,
+        _ => 63,
     }
 }
 

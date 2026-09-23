@@ -62,8 +62,9 @@ pub use model::{
 };
 pub use parser::{ParseError, ParseErrorKind, ParseOptions};
 pub use value::{
-    AnyUri, Base, Concept, DataTypeName, DateTime, Decimal, Guid, Language, MultiLanguageText,
-    PositiveInteger, Rational, Reference, Scale, ValueError, ValueErrorKind,
+    AnyUri, Base, Base64Binary, Concept, DataTypeName, DateTime, Decimal, Guid, Language,
+    MultiLanguageText, NonNegativeInteger, PositiveInteger, Rational, Reference, Scale, ValueError,
+    ValueErrorKind,
 };
 
 /// The XML namespace declared by ISO 23387 edition 2.
