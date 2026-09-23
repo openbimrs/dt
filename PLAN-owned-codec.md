@@ -115,7 +115,25 @@ f. `./scripts/gate.sh` exit 0
 ## Status
 
 - [x] public Element/Attribute builder + Document::standalone (d159cdb)
-- [ ] read current parse->owned code; resolve Concept.references mapping
-- [ ] widen owned contracts
-- [ ] codec + evidence
-- [ ] docs, CHANGELOG, gate, review, push, release
+- [x] read current parse->owned code; resolve Concept.references mapping
+- [x] widen owned contracts
+- [x] codec + evidence
+- [ ] review, push, release (docs + CHANGELOG + gate done)
+
+## Status (2026-09-23): phase 1 complete, local only
+
+Branch `feature/owned-codec`, worktree `.worktrees/codec`, off 579dedf (0.2.1).
+Full `scripts/gate.sh` passes; guard 32/32 mutations killed.
+
+- d159cdb public Element/Attribute builder, Document::standalone
+- d5559dc NonNegativeInteger, Base64Binary (136-case oracle diff vs Python)
+- c9bf90a owned types widened to the full schema; singular APIs deprecated
+- 528d57e FIX: schema tables gave Library ref-children empty definitions, so
+  valid ObjectType/Property/GroupOfProperties/DataTemplate inside a Library
+  failed validation (bug in published 0.2.1). Catalog generator now in-repo
+  (scripts/generate-schema-catalog.py) and resolves element refs.
+- fda8a75 codec: to_element/from_element for all 8 kinds, fail-closed decode
+
+Release shape: 0.3.0 (Concept::definition -> Option is breaking).
+Not pushed, not tagged, not published. Next: loin consumes it (loin plan
+phases 4-5) via a temporary gitignored path patch, then dt release.
