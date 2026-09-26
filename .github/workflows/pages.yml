@@ -28,6 +28,8 @@ jobs:
           cache-dependency-path: docs/requirements.txt
       - name: Install Rust 1.85
         uses: dtolnay/rust-toolchain@bc540ba06a4ccee415bb241490e0b25ee8e7d315 # 1.85.0
+        with:
+          toolchain: 1.85.0
       - name: Install documentation dependencies
         run: python -m pip install --disable-pip-version-check -r docs/requirements.txt
       - name: Build and verify site
