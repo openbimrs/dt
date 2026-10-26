@@ -39,7 +39,7 @@ assert len(packages) == 1, packages
 p = packages[0]
 assert p["name"] == "openbim-dt", p["name"]
 assert p["version"] == "0.3.0", p["version"]
-assert p["rust_version"] == "1.85", p["rust_version"]
+assert p["rust_version"] == "1.99", p["rust_version"]
 assert p["license"] == "MIT", p["license"]
 assert p["repository"] == "https://github.com/openbimrs/dt", p["repository"]
 assert p["homepage"] == "https://openbimrs.github.io/dt/", p["homepage"]

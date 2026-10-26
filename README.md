@@ -4,7 +4,7 @@
 [![Documentation](https://github.com/openbimrs/dt/actions/workflows/pages.yml/badge.svg)](https://openbimrs.github.io/dt/)
 [![crates.io](https://img.shields.io/crates/v/openbim-dt.svg)](https://crates.io/crates/openbim-dt)
 [![docs.rs](https://docs.rs/openbim-dt/badge.svg)](https://docs.rs/openbim-dt)
-[![MSRV](https://img.shields.io/badge/MSRV-1.85-blue)](https://www.rust-lang.org)
+[![MSRV](https://img.shields.io/badge/MSRV-1.99-blue)](https://www.rust-lang.org)
 
 Pure-Rust ISO 23387 edition 2 data-template contracts and a bounded,
 namespace-aware XML codec. The crate models identifiers, multilingual text,
@@ -119,7 +119,7 @@ never copied into `tests/fixtures/`.
 
 ## Development
 
-Requires Rust `1.85` or newer.
+Requires Rust `1.99` or newer.
 
 ```bash
 git clone https://github.com/openbimrs/dt.git

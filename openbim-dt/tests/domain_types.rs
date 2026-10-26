@@ -39,7 +39,7 @@ fn owned_type_contracts_enforce_annex_e_required_content() {
     data_type.add_constraint(DataTypeConstraint::MinInclusive("1".to_owned()));
     let mut property = Property::new(concept("40000000-0000-0000-0000-000000000000"), data_type);
     property.add_unit_ref(dimension_ref.clone());
-    assert_eq!(property.unit_refs(), &[dimension_ref.clone()]);
+    assert_eq!(property.unit_refs(), std::slice::from_ref(&dimension_ref));
     let possible_values = &property.data_type().possible_values()[0];
     assert_eq!(possible_values.language().as_str(), "en");
     assert_eq!(possible_values.values().len(), 2);
@@ -119,7 +119,7 @@ fn widened_references_keep_their_singular_shims() {
     );
     assert_eq!(subject.is_subtype_of_ref(), Some(&first));
     subject.set_is_subtype_of_ref(Some(second.clone()));
-    assert_eq!(subject.is_subtype_of_refs(), &[second.clone()]);
+    assert_eq!(subject.is_subtype_of_refs(), std::slice::from_ref(&second));
     subject.set_is_subtype_of_ref(None);
     assert!(subject.is_subtype_of_refs().is_empty());
 

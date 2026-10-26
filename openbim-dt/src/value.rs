@@ -256,7 +256,6 @@ macro_rules! list_accessors {
         )*
     };
 }
-pub(crate) use list_accessors;
 
 /// Owned ISO 23387 `ConceptType`: every attribute and child it declares.
 ///
@@ -657,7 +656,7 @@ impl FromStr for Base64Binary {
 
 fn is_base64_lexeme(value: &str) -> bool {
     let symbols: Vec<u8> = value.bytes().filter(|byte| *byte != b' ').collect();
-    if symbols.len() % 4 != 0 {
+    if !symbols.len().is_multiple_of(4) {
         return false;
     }
     let padding = symbols
@@ -679,8 +678,8 @@ fn is_base64_lexeme(value: &str) -> bool {
     // one pad => B04 alphabet (value % 4 == 0), two pads => B16 (value % 16 == 0).
     match (padding, body.last()) {
         (0, _) | (_, None) => padding == 0,
-        (1, Some(&last)) => base64_value(last) % 4 == 0,
-        (2, Some(&last)) => base64_value(last) % 16 == 0,
+        (1, Some(&last)) => base64_value(last).is_multiple_of(4),
+        (2, Some(&last)) => base64_value(last).is_multiple_of(16),
         _ => false,
     }
 }
